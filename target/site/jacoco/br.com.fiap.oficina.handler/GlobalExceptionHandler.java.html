@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GlobalExceptionHandler.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">oficina</a> &gt; <a href="index.source.html" class="el_package">br.com.fiap.oficina.handler</a> &gt; <span class="el_source">GlobalExceptionHandler.java</span></div><h1>GlobalExceptionHandler.java</h1><pre class="source lang-java linenums">package br.com.fiap.oficina.handler;
+
+import br.com.fiap.oficina.handler.exception.RecursoNaoEncontradoException;
+import br.com.fiap.oficina.handler.exception.RegraDeNegocioException;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ProblemDetail;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
+
+import java.time.LocalDateTime;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+@RestControllerAdvice
+<span class="fc" id="L17">public class GlobalExceptionHandler {</span>
+
+    @ExceptionHandler(RecursoNaoEncontradoException.class)
+    public ProblemDetail handleNotFound(RecursoNaoEncontradoException ex) {
+<span class="fc" id="L21">        ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());</span>
+<span class="fc" id="L22">        pd.setTitle(&quot;Recurso não encontrado&quot;);</span>
+<span class="fc" id="L23">        pd.setProperty(&quot;timestamp&quot;, LocalDateTime.now());</span>
+<span class="fc" id="L24">        return pd;</span>
+    }
+
+    @ExceptionHandler(RegraDeNegocioException.class)
+    public ProblemDetail handleNegocio(RegraDeNegocioException ex) {
+<span class="fc" id="L29">        ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.UNPROCESSABLE_ENTITY, ex.getMessage());</span>
+<span class="fc" id="L30">        pd.setTitle(&quot;Regra de negócio violada&quot;);</span>
+<span class="fc" id="L31">        pd.setProperty(&quot;timestamp&quot;, LocalDateTime.now());</span>
+<span class="fc" id="L32">        return pd;</span>
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ProblemDetail handleValidation(MethodArgumentNotValidException ex) {
+<span class="fc" id="L37">        Map&lt;String, String&gt; erros = ex.getBindingResult().getFieldErrors().stream()</span>
+<span class="fc" id="L38">                .collect(Collectors.toMap(</span>
+                        FieldError::getField,
+<span class="pc bpc" id="L40" title="1 of 2 branches missed.">                        fe -&gt; fe.getDefaultMessage() != null ? fe.getDefaultMessage() : &quot;inválido&quot;,</span>
+<span class="nc" id="L41">                        (a, b) -&gt; a</span>
+                ));
+<span class="fc" id="L43">        ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, &quot;Dados inválidos na requisição.&quot;);</span>
+<span class="fc" id="L44">        pd.setTitle(&quot;Erro de validação&quot;);</span>
+<span class="fc" id="L45">        pd.setProperty(&quot;campos&quot;, erros);</span>
+<span class="fc" id="L46">        pd.setProperty(&quot;timestamp&quot;, LocalDateTime.now());</span>
+<span class="fc" id="L47">        return pd;</span>
+    }
+
+    @ExceptionHandler(IllegalStateException.class)
+    public ProblemDetail handleIllegalState(IllegalStateException ex) {
+<span class="fc" id="L52">        ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());</span>
+<span class="fc" id="L53">        pd.setTitle(&quot;Conflito de estado&quot;);</span>
+<span class="fc" id="L54">        pd.setProperty(&quot;timestamp&quot;, LocalDateTime.now());</span>
+<span class="fc" id="L55">        return pd;</span>
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ProblemDetail handleGeneric(Exception ex) {
+<span class="fc" id="L60">        ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.INTERNAL_SERVER_ERROR, &quot;Erro interno no servidor.&quot;);</span>
+<span class="fc" id="L61">        pd.setTitle(&quot;Erro interno&quot;);</span>
+<span class="fc" id="L62">        pd.setProperty(&quot;timestamp&quot;, LocalDateTime.now());</span>
+<span class="fc" id="L63">        return pd;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

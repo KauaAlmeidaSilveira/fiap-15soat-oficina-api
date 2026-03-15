@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DataLoader.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">oficina</a> &gt; <a href="index.source.html" class="el_package">br.com.fiap.oficina.config</a> &gt; <span class="el_source">DataLoader.java</span></div><h1>DataLoader.java</h1><pre class="source lang-java linenums">package br.com.fiap.oficina.config;
+
+import br.com.fiap.oficina.domain.enums.StatusOS;
+import br.com.fiap.oficina.domain.enums.TipoDocumento;
+import br.com.fiap.oficina.domain.enums.TipoMovimentacao;
+import br.com.fiap.oficina.domain.enums.TipoProduto;
+import br.com.fiap.oficina.domain.model.Cliente;
+import br.com.fiap.oficina.domain.model.ClienteVeiculo;
+import br.com.fiap.oficina.domain.model.MovimentacaoEstoque;
+import br.com.fiap.oficina.domain.model.OrdemServico;
+import br.com.fiap.oficina.domain.model.OsItem;
+import br.com.fiap.oficina.domain.model.Produto;
+import br.com.fiap.oficina.domain.model.SaldoEstoque;
+import br.com.fiap.oficina.domain.model.Veiculo;
+import br.com.fiap.oficina.domain.repository.ClienteRepository;
+import br.com.fiap.oficina.domain.repository.ClienteVeiculoRepository;
+import br.com.fiap.oficina.domain.repository.MovimentacaoEstoqueRepository;
+import br.com.fiap.oficina.domain.repository.OrdemServicoRepository;
+import br.com.fiap.oficina.domain.repository.ProdutoRepository;
+import br.com.fiap.oficina.domain.repository.SaldoEstoqueRepository;
+import br.com.fiap.oficina.domain.repository.VeiculoRepository;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
+
+import java.math.BigDecimal;
+import java.util.List;
+
+@Configuration
+@RequiredArgsConstructor
+<span class="fc" id="L34">@Slf4j</span>
+public class DataLoader {
+
+    @Bean
+    @Profile(&quot;!test&quot;)
+    CommandLineRunner loadData(
+            ClienteRepository clienteRepo,
+            VeiculoRepository veiculoRepo,
+            ClienteVeiculoRepository cvRepo,
+            ProdutoRepository produtoRepo,
+            SaldoEstoqueRepository saldoRepo,
+            MovimentacaoEstoqueRepository movRepo,
+            OrdemServicoRepository osRepo) {
+
+<span class="nc" id="L48">        return args -&gt; {</span>
+<span class="nc" id="L49">            log.info(&quot;=== Carregando dados iniciais de demonstração ===&quot;);</span>
+
+            // --- Clientes ---
+<span class="nc" id="L52">            Cliente joao = clienteRepo.save(Cliente.builder()</span>
+<span class="nc" id="L53">                    .nome(&quot;João da Silva&quot;).cpfCnpj(&quot;12345678901&quot;)</span>
+<span class="nc" id="L54">                    .tipoDocumento(TipoDocumento.CPF)</span>
+<span class="nc" id="L55">                    .telefone(&quot;11999990001&quot;).email(&quot;joao@email.com&quot;)</span>
+<span class="nc" id="L56">                    .endereco(&quot;Rua das Flores, 100 - SP&quot;).build());</span>
+
+<span class="nc" id="L58">            Cliente maria = clienteRepo.save(Cliente.builder()</span>
+<span class="nc" id="L59">                    .nome(&quot;Maria Oliveira&quot;).cpfCnpj(&quot;98765432100&quot;)</span>
+<span class="nc" id="L60">                    .tipoDocumento(TipoDocumento.CPF)</span>
+<span class="nc" id="L61">                    .telefone(&quot;11999990002&quot;).email(&quot;maria@email.com&quot;)</span>
+<span class="nc" id="L62">                    .endereco(&quot;Av. Paulista, 200 - SP&quot;).build());</span>
+
+<span class="nc" id="L64">            Cliente empresa = clienteRepo.save(Cliente.builder()</span>
+<span class="nc" id="L65">                    .nome(&quot;Transportes Rápidos Ltda&quot;).cpfCnpj(&quot;12345678000199&quot;)</span>
+<span class="nc" id="L66">                    .tipoDocumento(TipoDocumento.CNPJ)</span>
+<span class="nc" id="L67">                    .telefone(&quot;11333330001&quot;).email(&quot;frota@transportes.com&quot;)</span>
+<span class="nc" id="L68">                    .endereco(&quot;Rod. Anchieta, km 10 - SP&quot;).build());</span>
+
+            // --- Veículos ---
+<span class="nc" id="L71">            Veiculo corolla = veiculoRepo.save(Veiculo.builder()</span>
+<span class="nc" id="L72">                    .placa(&quot;ABC1234&quot;).marca(&quot;Toyota&quot;).modelo(&quot;Corolla&quot;)</span>
+<span class="nc" id="L73">                    .ano(2021).cor(&quot;Prata&quot;).build());</span>
+
+<span class="nc" id="L75">            Veiculo hb20 = veiculoRepo.save(Veiculo.builder()</span>
+<span class="nc" id="L76">                    .placa(&quot;DEF5678&quot;).marca(&quot;Hyundai&quot;).modelo(&quot;HB20&quot;)</span>
+<span class="nc" id="L77">                    .ano(2019).cor(&quot;Branco&quot;).build());</span>
+
+<span class="nc" id="L79">            Veiculo sprinter = veiculoRepo.save(Veiculo.builder()</span>
+<span class="nc" id="L80">                    .placa(&quot;XYZ9A01&quot;).marca(&quot;Mercedes-Benz&quot;).modelo(&quot;Sprinter&quot;)</span>
+<span class="nc" id="L81">                    .ano(2022).cor(&quot;Cinza&quot;).build());</span>
+
+            // --- Vínculo Cliente-Veículo ---
+<span class="nc" id="L84">            cvRepo.save(ClienteVeiculo.builder().cliente(joao).veiculo(corolla).build());</span>
+<span class="nc" id="L85">            cvRepo.save(ClienteVeiculo.builder().cliente(maria).veiculo(hb20).build());</span>
+<span class="nc" id="L86">            cvRepo.save(ClienteVeiculo.builder().cliente(empresa).veiculo(sprinter).build());</span>
+
+            // --- Produtos (Peças) ---
+<span class="nc" id="L89">            Produto filtroOleo = criarPeca(produtoRepo, saldoRepo, movRepo,</span>
+<span class="nc" id="L90">                    &quot;Filtro de Óleo&quot;, &quot;Filtro original 1L&quot;, &quot;45.00&quot;, &quot;UN&quot;, 50);</span>
+<span class="nc" id="L91">            criarPeca(produtoRepo, saldoRepo, movRepo,</span>
+<span class="nc" id="L92">                    &quot;Filtro de Ar&quot;, &quot;Filtro de ar do motor&quot;, &quot;35.00&quot;, &quot;UN&quot;, 30);</span>
+<span class="nc" id="L93">            Produto oleoMotor = criarPeca(produtoRepo, saldoRepo, movRepo,</span>
+<span class="nc" id="L94">                    &quot;Óleo Motor 5W30&quot;, &quot;Óleo sintético 5W30 - 1L&quot;, &quot;28.00&quot;, &quot;L&quot;, 100);</span>
+<span class="nc" id="L95">            criarPeca(produtoRepo, saldoRepo, movRepo,</span>
+<span class="nc" id="L96">                    &quot;Pastilha de Freio Dianteira&quot;, &quot;Kit com 4 pastilhas&quot;, &quot;120.00&quot;, &quot;KIT&quot;, 20);</span>
+<span class="nc" id="L97">            criarPeca(produtoRepo, saldoRepo, movRepo,</span>
+<span class="nc" id="L98">                    &quot;Correia Dentada&quot;, &quot;Correia dentada + tensor&quot;, &quot;180.00&quot;, &quot;KIT&quot;, 15);</span>
+
+            // --- Produtos (Serviços) ---
+<span class="nc" id="L101">            Produto trocaOleo = criarServico(produtoRepo,</span>
+<span class="nc" id="L102">                    &quot;Troca de Óleo e Filtro&quot;, &quot;Mão de obra para troca de óleo&quot;, &quot;80.00&quot;);</span>
+<span class="nc" id="L103">            criarServico(produtoRepo,</span>
+<span class="nc" id="L104">                    &quot;Alinhamento e Balanceamento&quot;, &quot;Alinhamento 4 rodas + balanceamento&quot;, &quot;150.00&quot;);</span>
+<span class="nc" id="L105">            criarServico(produtoRepo,</span>
+<span class="nc" id="L106">                    &quot;Revisão de Freios&quot;, &quot;Inspeção e substituição de pastilhas/discos&quot;, &quot;120.00&quot;);</span>
+<span class="nc" id="L107">            criarServico(produtoRepo,</span>
+<span class="nc" id="L108">                    &quot;Troca de Correia Dentada&quot;, &quot;Mão de obra para troca de correia&quot;, &quot;200.00&quot;);</span>
+
+            // --- Ordens de Serviço de exemplo ---
+            // OS 1 - Aguardando aprovação
+<span class="nc" id="L112">            OrdemServico os1 = OrdemServico.builder()</span>
+<span class="nc" id="L113">                    .cliente(joao).veiculo(corolla)</span>
+<span class="nc" id="L114">                    .numero(&quot;OS&quot; + System.currentTimeMillis())</span>
+<span class="nc" id="L115">                    .status(StatusOS.AGUARDANDO_APROVACAO)</span>
+<span class="nc" id="L116">                    .descricaoProblema(&quot;Troca de óleo e revisão dos freios&quot;)</span>
+<span class="nc" id="L117">                    .build();</span>
+<span class="nc" id="L118">            os1.getItens().addAll(List.of(</span>
+<span class="nc" id="L119">                    OsItem.builder().ordemServico(os1).produto(trocaOleo)</span>
+<span class="nc" id="L120">                            .quantidade(BigDecimal.ONE).precoUnitario(trocaOleo.getPrecoUnitario()).build(),</span>
+<span class="nc" id="L121">                    OsItem.builder().ordemServico(os1).produto(oleoMotor)</span>
+<span class="nc" id="L122">                            .quantidade(new BigDecimal(&quot;4&quot;)).precoUnitario(oleoMotor.getPrecoUnitario()).build(),</span>
+<span class="nc" id="L123">                    OsItem.builder().ordemServico(os1).produto(filtroOleo)</span>
+<span class="nc" id="L124">                            .quantidade(BigDecimal.ONE).precoUnitario(filtroOleo.getPrecoUnitario()).build()</span>
+            ));
+<span class="nc" id="L126">            BigDecimal totalOs1 = os1.getItens().stream()</span>
+<span class="nc" id="L127">                    .map(i -&gt; i.getQuantidade().multiply(i.getPrecoUnitario()))</span>
+<span class="nc" id="L128">                    .reduce(BigDecimal.ZERO, BigDecimal::add);</span>
+<span class="nc" id="L129">            os1.setValorTotal(totalOs1);</span>
+<span class="nc" id="L130">            osRepo.save(os1);</span>
+
+            // OS 3 - Recebida (nova)
+<span class="nc" id="L133">            OrdemServico os3 = OrdemServico.builder()</span>
+<span class="nc" id="L134">                    .cliente(empresa).veiculo(sprinter)</span>
+<span class="nc" id="L135">                    .numero(&quot;OS&quot; + (System.currentTimeMillis() + 1))</span>
+<span class="nc" id="L136">                    .status(StatusOS.RECEBIDA)</span>
+<span class="nc" id="L137">                    .descricaoProblema(&quot;Barulho ao frear - verificar freios dianteiros&quot;)</span>
+<span class="nc" id="L138">                    .build();</span>
+<span class="nc" id="L139">            osRepo.save(os3);</span>
+
+<span class="nc" id="L141">            log.info(&quot;=== Dados carregados com sucesso ===&quot;);</span>
+<span class="nc" id="L142">            log.info(&quot;Clientes: {}&quot;, clienteRepo.count());</span>
+<span class="nc" id="L143">            log.info(&quot;Veículos: {}&quot;, veiculoRepo.count());</span>
+<span class="nc" id="L144">            log.info(&quot;Produtos: {}&quot;, produtoRepo.count());</span>
+<span class="nc" id="L145">            log.info(&quot;Ordens de Serviço: {}&quot;, osRepo.count());</span>
+<span class="nc" id="L146">            log.info(&quot;Swagger: http://localhost:8080/swagger-ui.html&quot;);</span>
+<span class="nc" id="L147">            log.info(&quot;H2 Console: http://localhost:8080/h2-console&quot;);</span>
+<span class="nc" id="L148">        };</span>
+    }
+
+    private Produto criarPeca(ProdutoRepository prodRepo, SaldoEstoqueRepository saldoRepo,
+                               MovimentacaoEstoqueRepository movRepo,
+                               String nome, String desc, String preco, String unidade, int qtdInicial) {
+<span class="nc" id="L154">        Produto p = prodRepo.save(Produto.builder()</span>
+<span class="nc" id="L155">                .nome(nome).descricao(desc).tipo(TipoProduto.PECA)</span>
+<span class="nc" id="L156">                .precoUnitario(new BigDecimal(preco)).unidadeMedida(unidade).ativo(true).build());</span>
+<span class="nc" id="L157">        BigDecimal qtd = new BigDecimal(qtdInicial);</span>
+<span class="nc" id="L158">        saldoRepo.save(SaldoEstoque.builder().produto(p).quantidade(qtd).build());</span>
+<span class="nc" id="L159">        movRepo.save(MovimentacaoEstoque.builder()</span>
+<span class="nc" id="L160">                .produto(p)</span>
+<span class="nc" id="L161">                .tipo(TipoMovimentacao.ENTRADA)</span>
+<span class="nc" id="L162">                .quantidade(qtd)</span>
+<span class="nc" id="L163">                .motivo(&quot;Estoque inicial - carga do sistema&quot;)</span>
+<span class="nc" id="L164">                .build());</span>
+<span class="nc" id="L165">        return p;</span>
+    }
+
+    private Produto criarServico(ProdutoRepository prodRepo, String nome, String desc, String preco) {
+<span class="nc" id="L169">        return prodRepo.save(Produto.builder()</span>
+<span class="nc" id="L170">                .nome(nome).descricao(desc).tipo(TipoProduto.SERVICO)</span>
+<span class="nc" id="L171">                .precoUnitario(new BigDecimal(preco)).ativo(true).build());</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>
