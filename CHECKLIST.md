@@ -31,6 +31,7 @@
 ### Segurança e qualidade
 - [ ] Implementação de autenticação JWT para APIs administrativas
 - [x] Validação dos dados sensíveis (CPF/CNPJ, placa de veículo)
+- [ ] Em relação a validação de dados sensíveis Como os documentos CPF CNPJ E a placa do veículo Devem ser validados utilizando bibliotecas para validação de CPF/CNPJ e placa de veículo, garantindo que os dados inseridos estejam no formato correto e sejam válidos.
 - [x] Testes unitários para os principais fluxos
 - [x] Testes de integração para os principais fluxos
 - [x] Cobertura mínima de 80% nos domínios críticos
@@ -46,6 +47,7 @@
 - [ ] Repositório privado com acesso ao usuário `soat-architecture`
 
 ## Entregáveis da Fase 1
+- [ ] Revisar mensagens salvas no discord para garantir que os requisitos foram atendidos
 - [ ] Vídeo de até 15 minutos demonstrando todos os pontos
 - [ ] Documentação DDD (Miro ou equivalente)
   - [ ] Event Storming — fluxo de criação e acompanhamento da OS
