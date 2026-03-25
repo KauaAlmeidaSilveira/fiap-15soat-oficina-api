@@ -1,4 +1,0 @@
--------------------------------------------------------------------------------
-Test set: br.com.fiap.oficina.domain.SaldoEstoqueTest
--------------------------------------------------------------------------------
-Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.019 s -- in br.com.fiap.oficina.domain.SaldoEstoqueTest

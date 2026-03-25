@@ -10,14 +10,18 @@ import br.com.fiap.oficina.domain.model.MovimentacaoEstoque;
 import br.com.fiap.oficina.domain.model.OrdemServico;
 import br.com.fiap.oficina.domain.model.OsItem;
 import br.com.fiap.oficina.domain.model.Produto;
+import br.com.fiap.oficina.domain.model.Role;
 import br.com.fiap.oficina.domain.model.SaldoEstoque;
+import br.com.fiap.oficina.domain.model.User;
 import br.com.fiap.oficina.domain.model.Veiculo;
 import br.com.fiap.oficina.domain.repository.ClienteRepository;
 import br.com.fiap.oficina.domain.repository.ClienteVeiculoRepository;
 import br.com.fiap.oficina.domain.repository.MovimentacaoEstoqueRepository;
 import br.com.fiap.oficina.domain.repository.OrdemServicoRepository;
 import br.com.fiap.oficina.domain.repository.ProdutoRepository;
+import br.com.fiap.oficina.domain.repository.RoleRepository;
 import br.com.fiap.oficina.domain.repository.SaldoEstoqueRepository;
+import br.com.fiap.oficina.domain.repository.UserRepository;
 import br.com.fiap.oficina.domain.repository.VeiculoRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,9 +29,11 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Set;
 
 @Configuration
 @RequiredArgsConstructor
@@ -43,7 +49,9 @@ public class DataLoader {
             ProdutoRepository produtoRepo,
             SaldoEstoqueRepository saldoRepo,
             MovimentacaoEstoqueRepository movRepo,
-            OrdemServicoRepository osRepo) {
+            OrdemServicoRepository osRepo,
+            UserRepository userRepo,
+            RoleRepository roleRepo) {
 
         return args -> {
             if (clienteRepo.count() > 0) {
@@ -52,36 +60,58 @@ public class DataLoader {
             }
             log.info("=== Carregando dados iniciais de demonstração ===");
 
+            // --- Roles ---
+            Role roleAdmin = new Role();
+            roleAdmin.setName(Role.Values.ADMIN.name());
+            roleAdmin = roleRepo.save(roleAdmin);
+
+            Role roleBasic = new Role();
+            roleBasic.setName(Role.Values.BASIC.name());
+            roleBasic = roleRepo.save(roleBasic);
+
+            // --- Usuário padrão (admin do sistema) ---
+            User admin = new User();
+            admin.setUsername("kaua@gmail.com");
+            admin.setPassword(new BCryptPasswordEncoder().encode("admin123"));
+            admin.setRoles(Set.of(roleAdmin, roleBasic));
+            admin = userRepo.save(admin);
+
             // --- Clientes ---
             Cliente joao = clienteRepo.save(Cliente.builder()
                     .nome("João da Silva").cpfCnpj("12345678901")
                     .tipoDocumento(TipoDocumento.CPF)
-                    .telefone("11999990001").email("joao@email.com")
+                    .telefone("11999990001")
+                    .email("joao@email.com")
                     .endereco("Rua das Flores, 100 - SP").build());
 
             Cliente maria = clienteRepo.save(Cliente.builder()
                     .nome("Maria Oliveira").cpfCnpj("98765432100")
                     .tipoDocumento(TipoDocumento.CPF)
-                    .telefone("11999990002").email("maria@email.com")
+                    .telefone("11999990002")
+                    .email("maria@email.com")
                     .endereco("Av. Paulista, 200 - SP").build());
 
             Cliente empresa = clienteRepo.save(Cliente.builder()
                     .nome("Transportes Rápidos Ltda").cpfCnpj("12345678000199")
                     .tipoDocumento(TipoDocumento.CNPJ)
-                    .telefone("11333330001").email("frota@transportes.com")
+                    .telefone("11333330001")
+                    .email("frota@transportes.com")
                     .endereco("Rod. Anchieta, km 10 - SP").build());
 
             // --- Veículos ---
             Veiculo corolla = veiculoRepo.save(Veiculo.builder()
-                    .placa("ABC1234").marca("Toyota").modelo("Corolla")
+                    .placa("ABC1234").marca("Toyota")
+                    .modelo("Corolla")
                     .ano(2021).cor("Prata").build());
 
             Veiculo hb20 = veiculoRepo.save(Veiculo.builder()
-                    .placa("DEF5678").marca("Hyundai").modelo("HB20")
+                    .placa("DEF5678").marca("Hyundai")
+                    .modelo("HB20")
                     .ano(2019).cor("Branco").build());
 
             Veiculo sprinter = veiculoRepo.save(Veiculo.builder()
-                    .placa("XYZ9A01").marca("Mercedes-Benz").modelo("Sprinter")
+                    .placa("XYZ9A01").marca("Mercedes-Benz")
+                    .modelo("Sprinter")
                     .ano(2022).cor("Cinza").build());
 
             // --- Vínculo Cliente-Veículo ---
@@ -118,6 +148,7 @@ public class DataLoader {
                     .numero("OS" + System.currentTimeMillis())
                     .status(StatusOS.AGUARDANDO_APROVACAO)
                     .descricaoProblema("Troca de óleo e revisão dos freios")
+                    .user(admin)
                     .build();
             os1.getItens().addAll(List.of(
                     OsItem.builder().ordemServico(os1).produto(trocaOleo)
@@ -139,6 +170,7 @@ public class DataLoader {
                     .numero("OS" + (System.currentTimeMillis() + 1))
                     .status(StatusOS.RECEBIDA)
                     .descricaoProblema("Barulho ao frear - verificar freios dianteiros")
+                    .user(admin)
                     .build();
             osRepo.save(os3);
 

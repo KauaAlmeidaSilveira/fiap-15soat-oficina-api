@@ -2,6 +2,7 @@ package br.com.fiap.oficina.handler;
 
 import br.com.fiap.oficina.handler.exception.RecursoNaoEncontradoException;
 import br.com.fiap.oficina.handler.exception.RegraDeNegocioException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.validation.FieldError;
@@ -14,10 +15,12 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestControllerAdvice
+@Slf4j
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(RecursoNaoEncontradoException.class)
     public ProblemDetail handleNotFound(RecursoNaoEncontradoException ex) {
+        log.warn("Recurso não encontrado: {}", ex.getMessage());
         ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
         pd.setTitle("Recurso não encontrado");
         pd.setProperty("timestamp", LocalDateTime.now());
@@ -26,6 +29,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(RegraDeNegocioException.class)
     public ProblemDetail handleNegocio(RegraDeNegocioException ex) {
+        log.warn("Regra de negócio violada: {}", ex.getMessage());
         ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.UNPROCESSABLE_ENTITY, ex.getMessage());
         pd.setTitle("Regra de negócio violada");
         pd.setProperty("timestamp", LocalDateTime.now());
@@ -49,6 +53,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(IllegalStateException.class)
     public ProblemDetail handleIllegalState(IllegalStateException ex) {
+        log.warn("Conflito de estado: {}", ex.getMessage());
         ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
         pd.setTitle("Conflito de estado");
         pd.setProperty("timestamp", LocalDateTime.now());
@@ -57,6 +62,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ProblemDetail handleGeneric(Exception ex) {
+        log.error("Exceção não tratada: {}", ex.getMessage(), ex);
         ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.INTERNAL_SERVER_ERROR, "Erro interno no servidor.");
         pd.setTitle("Erro interno");
         pd.setProperty("timestamp", LocalDateTime.now());
