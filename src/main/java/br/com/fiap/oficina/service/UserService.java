@@ -4,7 +4,6 @@ import br.com.fiap.oficina.domain.model.User;
 import br.com.fiap.oficina.domain.repository.UserRepository;
 import br.com.fiap.oficina.dto.request.LoginRequest;
 import br.com.fiap.oficina.handler.exception.RecursoNaoEncontradoException;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -12,10 +11,12 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class UserService {
 
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
-    public UserService(UserRepository userRepository) {
+    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @Transactional(readOnly = true)
@@ -25,7 +26,7 @@ public class UserService {
     }
 
     public boolean isPasswordValid(LoginRequest loginRequest, String userPassword) {
-        return new BCryptPasswordEncoder().matches(loginRequest.password(), userPassword);
+        return passwordEncoder.matches(loginRequest.password(), userPassword);
     }
 
 }

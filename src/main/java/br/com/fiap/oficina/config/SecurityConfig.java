@@ -13,6 +13,8 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
@@ -52,11 +54,16 @@ public class SecurityConfig {
 
     @Bean
     public JwtEncoder jwtEncoder() {
-         JWK jwk = new RSAKey
-                 .Builder(this.publicKey)
-                 .privateKey(this.privateKey).build();
-         var jwks = new ImmutableJWKSet<>(new JWKSet(jwk));
-         return new NimbusJwtEncoder(jwks);
+        JWK jwk = new RSAKey
+                .Builder(this.publicKey)
+                .privateKey(this.privateKey).build();
+        var jwks = new ImmutableJWKSet<>(new JWKSet(jwk));
+        return new NimbusJwtEncoder(jwks);
+    }
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
     }
 
 }

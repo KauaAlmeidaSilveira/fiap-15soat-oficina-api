@@ -72,7 +72,7 @@ public class DataLoader {
             // --- Usuário padrão (admin do sistema) ---
             User admin = new User();
             admin.setUsername("kaua@gmail.com");
-            admin.setPassword(new BCryptPasswordEncoder().encode("admin123"));
+            admin.setPassword(new BCryptPasswordEncoder().encode("Admin@123"));
             admin.setRoles(Set.of(roleAdmin, roleBasic));
             admin = userRepo.save(admin);
 

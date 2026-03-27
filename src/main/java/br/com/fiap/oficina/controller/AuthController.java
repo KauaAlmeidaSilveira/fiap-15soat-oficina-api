@@ -1,52 +1,34 @@
 package br.com.fiap.oficina.controller;
 
-import br.com.fiap.oficina.domain.model.User;
 import br.com.fiap.oficina.dto.request.LoginRequest;
+import br.com.fiap.oficina.dto.request.RegisterRequest;
 import br.com.fiap.oficina.dto.response.LoginResponse;
-import br.com.fiap.oficina.service.UserService;
+import br.com.fiap.oficina.dto.response.RegisterResponse;
+import br.com.fiap.oficina.service.AuthService;
+import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
-import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.oauth2.jwt.JwtClaimsSet;
-import org.springframework.security.oauth2.jwt.JwtEncoder;
-import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.time.Instant;
 
 @RestController
 @RequestMapping("/api/auth")
 @AllArgsConstructor
 public class AuthController {
 
-    private final JwtEncoder jwtEncoder;
-
-    private final UserService userService;
+    private final AuthService authService;
 
     @PostMapping("/login")
-    public ResponseEntity login(@RequestBody LoginRequest loginRequest) {
-        User user = userService.findByUsername(loginRequest.username());
+    public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest loginRequest) {
+        return ResponseEntity.ok(authService.getToken(loginRequest));
+    }
 
-        if (!userService.isPasswordValid(loginRequest, user.getPassword())) {
-            return ResponseEntity.status(401).body("DEU RUIM");
-        }
-
-        Instant now = Instant.now();
-        long expiresIn = 300L;
-
-        var claims = JwtClaimsSet.builder()
-                .issuer("back-end")
-                .issuedAt(now)
-                .subject(user.getUsername())
-                .expiresAt(now.plusSeconds(expiresIn))
-                .build();
-
-        var jwtValue = jwtEncoder.encode(JwtEncoderParameters.from(claims)).getTokenValue();
-
-        return ResponseEntity.ok(new LoginResponse(jwtValue, expiresIn));
+    @PostMapping("/register")
+    public ResponseEntity<RegisterResponse> register(@Valid @RequestBody RegisterRequest registerRequest) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(authService.register(registerRequest));
     }
 
 }

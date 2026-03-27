@@ -29,5 +29,8 @@ replay_pid*
 *.iws
 out/
 
+# Vscode
+.vscode/
+
 # Maven
 target/
