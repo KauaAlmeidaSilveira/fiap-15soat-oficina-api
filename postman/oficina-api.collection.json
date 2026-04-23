@@ -1,0 +1,1501 @@
+{
+  "info": {
+    "_postman_id": "944a4c94-95cd-4d59-b903-a5ea1c87b820",
+    "name": "Oficina Mecânica API",
+    "description": "Collection completa da API de oficina mecânica.\n\n---\n**PASSO 1** — Execute **Auth > Login** (escolha o usuário desejado).\nO token é salvo automaticamente em {{token}} e usado em todas as requisições protegidas.\n\n**PASSO 2** — Use os demais endpoints normalmente.\nAs variáveis {{cliente_id}}, {{veiculo_id}}, {{os_id}} e {{produto_id}} são salvas automaticamente pelos requests de criação — ou você pode editá-las manualmente na aba Environments.\n\n---\n**Dados do DataLoader (já no banco ao subir a aplicação):**\n\nUsuários:\n- kaua@gmail.com / Admin@123 → ADMIN\n- recepcao@oficina.com / Recepcao@123 → RECEPCAO\n- operador@oficina.com / Operador@123 → OPERADOR\n\nClientes (IDs 1-3):\n- 1 → João da Silva (CPF 12345678901)\n- 2 → Maria Oliveira (CPF 98765432100)\n- 3 → Transportes Rápidos Ltda (CNPJ 12345678000199)\n\nVeículos (IDs 1-3):\n- 1 → Toyota Corolla 2021 | placa ABC1234 (vinculado ao João)\n- 2 → Hyundai HB20 2019 | placa DEF5678 (vinculado à Maria)\n- 3 → Mercedes-Benz Sprinter 2022 | placa XYZ9A01 (vinculado à Empresa)\n\nProdutos — Peças (IDs 1-5):\n- 1 → Filtro de Óleo R$45,00 | estoque: 50 UN\n- 2 → Filtro de Ar R$35,00 | estoque: 30 UN\n- 3 → Óleo Motor 5W30 R$28,00 | estoque: 100 L\n- 4 → Pastilha de Freio Dianteira R$120,00 | estoque: 20 KIT\n- 5 → Correia Dentada R$180,00 | estoque: 15 KIT\n\nProdutos — Serviços (IDs 6-9):\n- 6 → Troca de Óleo e Filtro R$80,00\n- 7 → Alinhamento e Balanceamento R$150,00\n- 8 → Revisão de Freios R$120,00\n- 9 → Troca de Correia Dentada R$200,00\n\nOrdens de Serviço:\n- OS 1 → João / Corolla | status: AGUARDANDO_APROVACAO | total: R$237,00\n  itens: Troca de Óleo (1x R$80) + Óleo Motor 5W30 (4x R$28) + Filtro de Óleo (1x R$45)\n- OS 2 → Transportes Rápidos / Sprinter | status: RECEBIDA",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "53473425",
+    "_collection_link": "https://go.postman.co/collection/53473425-944a4c94-95cd-4d59-b903-a5ea1c87b820?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Login como ADMIN",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const json = pm.response.json();",
+                  "    pm.environment.set('token', json.token);",
+                  "}"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"kaua@gmail.com\",\n  \"password\": \"Admin@123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Login com ADMIN. Pode criar/editar/deletar tudo, incluindo registrar novos usuários e fazer saída manual de estoque."
+          },
+          "response": []
+        },
+        {
+          "name": "Login como RECEPCAO",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const json = pm.response.json();",
+                  "    pm.environment.set('token', json.token);",
+                  "    console.log('✅ Token salvo como RECEPCAO! Expira em ' + (json.expiresIn / 3600) + 'h');",
+                  "} else {",
+                  "    console.error('❌ Login falhou — verifique usuário e senha.');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"recepcao@oficina.com\",\n  \"password\": \"Recepcao@123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Pode criar/editar clientes, veículos e abrir OS. Não pode avançar status nem gerenciar estoque."
+          },
+          "response": []
+        },
+        {
+          "name": "Login como OPERADOR",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const json = pm.response.json();",
+                  "    pm.environment.set('token', json.token);",
+                  "    console.log('✅ Token salvo como OPERADOR! Expira em ' + (json.expiresIn / 3600) + 'h');",
+                  "} else {",
+                  "    console.error('❌ Login falhou — verifique usuário e senha.');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"operador@oficina.com\",\n  \"password\": \"Operador@123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Pode avançar status de OS, adicionar itens, gerenciar produtos e registrar entrada de estoque."
+          },
+          "response": []
+        },
+        {
+          "name": "Registrar Novo Usuário",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"novo.mecanico@oficina.com\",\n  \"password\": \"Mecanico@123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/register",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "register"
+              ]
+            },
+            "description": "Requer token de ADMIN no header.\nO usuário criado recebe automaticamente a role OPERADOR.\n\nRegras da senha: mínimo 8 caracteres, pelo menos 1 maiúsculo + 1 dígito + 1 caractere especial."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Clientes",
+      "item": [
+        {
+          "name": "Listar Todos os Clientes",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/clientes",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "clientes"
+              ]
+            },
+            "description": "Rota pública. DataLoader criou 3 clientes: João (1), Maria (2), Transportes Rápidos Ltda (3)."
+          },
+          "response": []
+        },
+        {
+          "name": "Buscar Cliente por ID",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/clientes/{{cliente_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "clientes",
+                "{{cliente_id}}"
+              ]
+            },
+            "description": "{{cliente_id}} = 1 por padrão (João da Silva)."
+          },
+          "response": []
+        },
+        {
+          "name": "Buscar Cliente por CPF",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/clientes/cpf-cnpj/12345678901",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "clientes",
+                "cpf-cnpj",
+                "12345678901"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Buscar Cliente por CNPJ",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/clientes/cpf-cnpj/12345678000199",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "clientes",
+                "cpf-cnpj",
+                "12345678000199"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Criar Cliente",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const json = pm.response.json();",
+                  "    pm.environment.set('cliente_id', json.id);",
+                  "    console.log('✅ cliente_id atualizado para:', json.id, '(' + json.nome + ')');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nome\": \"Carlos Pereira\",\n  \"cpfCnpj\": \"55544433322\",\n  \"tipoDocumento\": \"CPF\",\n  \"telefone\": \"11977775555\",\n  \"email\": \"carlos@email.com\",\n  \"endereco\": \"Rua Augusta, 500 - SP\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/clientes",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "clientes"
+              ]
+            },
+            "description": "Salva o ID do cliente criado em {{cliente_id}} automaticamente.\ntipoDocumento: CPF (cpfCnpj com 11 dígitos) ou CNPJ (14 dígitos)."
+          },
+          "response": []
+        },
+        {
+          "name": "Atualizar Cliente",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nome\": \"João da Silva (atualizado)\",\n  \"cpfCnpj\": \"12345678974\",\n  \"tipoDocumento\": \"CPF\",\n  \"telefone\": \"11988880001\",\n  \"email\": \"joao.novo@email.com\",\n  \"endereco\": \"Rua das Flores, 200 - SP\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/clientes/{{cliente_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "clientes",
+                "{{cliente_id}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Deletar Cliente",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/clientes/{{cliente_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "clientes",
+                "{{cliente_id}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Veículos",
+      "item": [
+        {
+          "name": "Listar Todos os Veículos",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/veiculos",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "veiculos"
+              ]
+            },
+            "description": "DataLoader: Corolla ABC1234 (1), HB20 DEF5678 (2), Sprinter XYZ9A01 (3)."
+          },
+          "response": []
+        },
+        {
+          "name": "Buscar Veículo por ID",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/veiculos/{{veiculo_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "veiculos",
+                "{{veiculo_id}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Buscar Veículo por Placa",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/veiculos/placa/ABC1234",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "veiculos",
+                "placa",
+                "ABC1234"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Listar Veículos por Cliente",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/veiculos/cliente/{{cliente_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "veiculos",
+                "cliente",
+                "{{cliente_id}}"
+              ]
+            },
+            "description": "Com {{cliente_id}}=1 retorna o Corolla vinculado ao João."
+          },
+          "response": []
+        },
+        {
+          "name": "Criar Veículo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const json = pm.response.json();",
+                  "    pm.environment.set('veiculo_id', json.id);",
+                  "    console.log('✅ veiculo_id atualizado para:', json.id, '(' + json.placa + ')');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"placa\": \"GHI3J45\",\n  \"marca\": \"Volkswagen\",\n  \"modelo\": \"Polo\",\n  \"ano\": 2023,\n  \"cor\": \"Cinza\",\n  \"chassi\": null\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/veiculos",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "veiculos"
+              ]
+            },
+            "description": "Placa GHI3J45 = formato Mercosul.\nSalva {{veiculo_id}} automaticamente."
+          },
+          "response": []
+        },
+        {
+          "name": "Atualizar Veículo",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"placa\": \"ABG1234\",\n  \"marca\": \"Toyota\",\n  \"modelo\": \"Corolla XEi\",\n  \"ano\": 2021,\n  \"cor\": \"Cinza Grafite\",\n  \"chassi\": null\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/veiculos/{{veiculo_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "veiculos",
+                "{{veiculo_id}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Deletar Veículo",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/veiculos/{{veiculo_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "veiculos",
+                "{{veiculo_id}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Vincular Cliente ao Veículo",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/veiculos/{{veiculo_id}}/clientes/{{cliente_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "veiculos",
+                "{{veiculo_id}}",
+                "clientes",
+                "{{cliente_id}}"
+              ]
+            },
+            "description": "Vincula {{cliente_id}} ao {{veiculo_id}}. Os três vínculos do DataLoader já existem:\n- João (1) ↔ Corolla (1)\n- Maria (2) ↔ HB20 (2)\n- Empresa (3) ↔ Sprinter (3)"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Ordens de Serviço",
+      "item": [
+        {
+          "name": "Listar Todas as OS",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/ordens-servico",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "ordens-servico"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "RECEBIDA",
+                  "disabled": true
+                },
+                {
+                  "key": "clienteId",
+                  "value": "1",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Filtros opcionais (habilite na aba Params):\n?status=RECEBIDA | EM_DIAGNOSTICO | AGUARDANDO_APROVACAO | EM_EXECUCAO | FINALIZADA | ENTREGUE\n?clienteId=1\n\nDataLoader criou:\n- OS 1: João/Corolla → AGUARDANDO_APROVACAO\n- OS 2: Empresa/Sprinter → RECEBIDA"
+          },
+          "response": []
+        },
+        {
+          "name": "Buscar OS por ID",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/ordens-servico/{{os_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "ordens-servico",
+                "{{os_id}}"
+              ]
+            },
+            "description": "{{os_id}}=1 → OS do João (AGUARDANDO_APROVACAO, total R$237,00)"
+          },
+          "response": []
+        },
+        {
+          "name": "Buscar OS por Número",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/ordens-servico/numero/OS1776911395475",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "ordens-servico",
+                "numero",
+                "OS1776911395475"
+              ]
+            },
+            "description": "Substitua OS1234567890 pelo número real (veja na listagem). Formato: 'OS' + timestamp numérico."
+          },
+          "response": []
+        },
+        {
+          "name": "Métricas — Tempo Médio de Execução",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/ordens-servico/metricas/tempo-medio",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "ordens-servico",
+                "metricas",
+                "tempo-medio"
+              ]
+            },
+            "description": "Retorna { \"tempoMedioHoras\": X } com a média das OS com status FINALIZADA ou ENTREGUE."
+          },
+          "response": []
+        },
+        {
+          "name": "Listar OS por Status",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/ordens-servico?status=AGUARDANDO_APROVACAO",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "ordens-servico"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "AGUARDANDO_APROVACAO"
+                }
+              ]
+            },
+            "description": "A OS 1 (João/Corolla) está nesse status no DataLoader."
+          },
+          "response": []
+        },
+        {
+          "name": "Criar Ordem de Serviço",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const json = pm.response.json();",
+                  "    pm.environment.set('os_id', json.id);",
+                  "    console.log('✅ os_id atualizado para:', json.id, '| Número:', json.numero, '| Status:', json.status);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"clienteId\": {{cliente_id}},\n  \"veiculoId\": {{veiculo_id}},\n  \"descricaoProblema\": \"Barulho ao frear — verificar pastilhas e discos\",\n  \"observacoes\": null,\n  \"itens\": [\n    {\n      \"produtoId\": 4,\n      \"quantidade\": 1,\n      \"precoUnitario\": null,\n      \"observacao\": \"Pastilha dianteira\"\n    },\n    {\n      \"produtoId\": 8,\n      \"quantidade\": 1,\n      \"precoUnitario\": null,\n      \"observacao\": null\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/ordens-servico",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "ordens-servico"
+              ]
+            },
+            "description": "Exemplo com:\n- Produto 4: Pastilha de Freio Dianteira (R$120,00)\n- Produto 8: Revisão de Freios — serviço (R$120,00)\nTotal esperado: R$240,00\n\nprecoUnitario null = usa o preço cadastrado no produto.\nStatus inicial sempre: RECEBIDA\n\n{{os_id}} é salvo automaticamente."
+          },
+          "response": []
+        },
+        {
+          "name": "Avançar Status da OS",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/ordens-servico/{{os_id}}/avancar-status",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "ordens-servico",
+                "{{os_id}}",
+                "avancar-status"
+              ]
+            },
+            "description": "Fluxo completo:\nRECEBIDA → EM_DIAGNOSTICO → AGUARDANDO_APROVACAO\n(aqui use /aprovar)\nEM_EXECUCAO → FINALIZADA → ENTREGUE\n\nOBS: a OS 1 do DataLoader já está em AGUARDANDO_APROVACAO — use /aprovar nela."
+          },
+          "response": []
+        },
+        {
+          "name": "Aprovar OS",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/ordens-servico/{{os_id}}/aprovar",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "ordens-servico",
+                "{{os_id}}",
+                "aprovar"
+              ]
+            },
+            "description": "Transição: AGUARDANDO_APROVACAO → EM_EXECUCAO.\n\n⚠️ Ao aprovar, o sistema gera automaticamente saídas de estoque para todas as PEÇAS da OS.\nEx: aprovando a OS 1 deduzirá 4x Óleo Motor e 1x Filtro de Óleo do estoque."
+          },
+          "response": []
+        },
+        {
+          "name": "Adicionar Item à OS",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"produtoId\": 2,\n  \"quantidade\": 1,\n  \"precoUnitario\": 125000,\n  \"observacao\": \"Filtro de ar adicionado durante diagnóstico\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/ordens-servico/{{os_id}}/itens",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "ordens-servico",
+                "{{os_id}}",
+                "itens"
+              ]
+            },
+            "description": "Exemplo: adiciona Filtro de Ar (produto 2, R$35,00) à OS.\nprecoUnitario null = usa preço do produto."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Produtos",
+      "item": [
+        {
+          "name": "Listar Todos os Produtos",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/produtos",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "produtos"
+              ],
+              "query": [
+                {
+                  "key": "tipo",
+                  "value": "PECA",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Filtro opcional (habilite em Params): ?tipo=PECA ou ?tipo=SERVICO\n\nDataLoader: 5 peças (IDs 1-5) + 4 serviços (IDs 6-9)"
+          },
+          "response": []
+        },
+        {
+          "name": "Listar apenas Peças",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/produtos?tipo=PECA",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "produtos"
+              ],
+              "query": [
+                {
+                  "key": "tipo",
+                  "value": "PECA"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Listar apenas Serviços",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/produtos?tipo=SERVICO",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "produtos"
+              ],
+              "query": [
+                {
+                  "key": "tipo",
+                  "value": "SERVICO"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Buscar Produto por ID",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/produtos/{{produto_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "produtos",
+                "{{produto_id}}"
+              ]
+            },
+            "description": "{{produto_id}}=1 → Filtro de Óleo, R$45,00, estoque 50 UN"
+          },
+          "response": []
+        },
+        {
+          "name": "Criar Produto (Peça)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const json = pm.response.json();",
+                  "    pm.environment.set('produto_id', json.id);",
+                  "    console.log('✅ produto_id atualizado para:', json.id, '(' + json.nome + ')');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nome\": \"Vela de Ignição NGK\",\n  \"descricao\": \"Vela original para motores 1.0 e 1.4\",\n  \"tipo\": \"PECA\",\n  \"precoUnitario\": 22.50,\n  \"unidadeMedida\": \"UN\",\n  \"quantidadeInicial\": 40\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/produtos",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "produtos"
+              ]
+            },
+            "description": "quantidadeInicial: já registra a entrada inicial no estoque (opcional).\n{{produto_id}} é salvo automaticamente."
+          },
+          "response": []
+        },
+        {
+          "name": "Criar Produto (Serviço)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nome\": \"Diagnóstico Eletrônico\",\n  \"descricao\": \"Leitura de falhas via scanner\",\n  \"tipo\": \"SERVICO\",\n  \"precoUnitario\": 100.00,\n  \"unidadeMedida\": null,\n  \"quantidadeInicial\": null\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/produtos",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "produtos"
+              ]
+            },
+            "description": "Serviços não têm controle de estoque — saldoEstoque virá null na resposta."
+          },
+          "response": []
+        },
+        {
+          "name": "Atualizar Produto",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nome\": \"Filtro de Óleo Premium\",\n  \"descricao\": \"Filtro original 1L — linha premium\",\n  \"tipo\": \"PECA\",\n  \"precoUnitario\": 52.90,\n  \"unidadeMedida\": \"UN\",\n  \"quantidadeInicial\": null\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/produtos/{{produto_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "produtos",
+                "{{produto_id}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Inativar Produto",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/produtos/{{produto_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "produtos",
+                "{{produto_id}}"
+              ]
+            },
+            "description": "Soft delete — marca ativo=false. Produto continua no banco e em OS existentes."
+          },
+          "response": []
+        },
+        {
+          "name": "Registrar Entrada de Estoque",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"produtoId\": {{produto_id}},\n  \"quantidade\": 20,\n  \"motivo\": \"Reposição — NF 20260422\",\n  \"ordemServicoId\": null\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/produtos/estoque/entrada",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "produtos",
+                "estoque",
+                "entrada"
+              ]
+            },
+            "description": "Ex: {{produto_id}}=3 (Óleo Motor 5W30, saldo atual 100L) + 20 = 120L."
+          },
+          "response": []
+        },
+        {
+          "name": "Registrar Saída de Estoque",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"produtoId\": {{produto_id}},\n  \"quantidade\": 2,\n  \"motivo\": \"Perda por avaria — descarte\",\n  \"ordemServicoId\": null\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/produtos/estoque/saida",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "produtos",
+                "estoque",
+                "saida"
+              ]
+            },
+            "description": "Uso excepcional — perdas e avarias. Somente ADMIN.\nSaídas normais são geradas automaticamente ao aprovar uma OS."
+          },
+          "response": []
+        },
+        {
+          "name": "Listar Movimentações por Produto",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/produtos/{{produto_id}}/estoque/movimentacoes",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "produtos",
+                "{{produto_id}}",
+                "estoque",
+                "movimentacoes"
+              ]
+            },
+            "description": "Com {{produto_id}}=1 verá a entrada inicial de 50 UN criada pelo DataLoader."
+          },
+          "response": []
+        },
+        {
+          "name": "Listar Todas as Movimentações",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/produtos/estoque/movimentacoes",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "produtos",
+                "estoque",
+                "movimentacoes"
+              ]
+            },
+            "description": "DataLoader gerou 5 entradas iniciais — uma para cada peça."
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  }
+}
