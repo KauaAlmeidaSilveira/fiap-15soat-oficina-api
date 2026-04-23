@@ -5,6 +5,7 @@ import br.com.fiap.oficina.handler.exception.RegraDeNegocioException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -66,6 +67,15 @@ public class GlobalExceptionHandler {
         log.warn("Resposta com status {}: {}", ex.getStatusCode(), ex.getReason());
         ProblemDetail pd = ProblemDetail.forStatusAndDetail(ex.getStatusCode(), ex.getReason() != null ? ex.getReason() : ex.getMessage());
         pd.setTitle("Erro de autenticação");
+        pd.setProperty("timestamp", LocalDateTime.now());
+        return pd;
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ProblemDetail handleAccessDenied(AccessDeniedException ex) {
+        log.warn("Acesso negado: {}", ex.getMessage());
+        ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, "Você não tem permissão para acessar este recurso.");
+        pd.setTitle("Acesso negado");
         pd.setProperty("timestamp", LocalDateTime.now());
         return pd;
     }

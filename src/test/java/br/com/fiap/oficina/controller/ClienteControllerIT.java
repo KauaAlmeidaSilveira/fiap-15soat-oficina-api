@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
@@ -24,6 +25,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
+@WithMockUser(roles = {"ADMIN", "RECEPCAO"})
 class ClienteControllerIT {
 
     @Autowired MockMvc mockMvc;
@@ -149,5 +151,39 @@ class ClienteControllerIT {
 
         mockMvc.perform(get("/api/clientes/" + id))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @WithMockUser(roles = "OPERADOR")
+    @DisplayName("Deve retornar 403 ao criar cliente sem permissão")
+    void deveRetornar403AoCriarClienteSemPermissao() throws Exception {
+        ClienteRequest request = new ClienteRequest(
+                "Sem Permissao", "99988877766", TipoDocumento.CPF, null, null, null);
+
+        mockMvc.perform(post("/api/clientes")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(roles = "OPERADOR")
+    @DisplayName("Deve retornar 403 ao atualizar cliente sem permissão")
+    void deveRetornar403AoAtualizarClienteSemPermissao() throws Exception {
+        ClienteRequest request = new ClienteRequest(
+                "Sem Permissao", "99988877766", TipoDocumento.CPF, null, null, null);
+
+        mockMvc.perform(put("/api/clientes/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(roles = "OPERADOR")
+    @DisplayName("Deve retornar 403 ao deletar cliente sem permissão")
+    void deveRetornar403AoDeletarClienteSemPermissao() throws Exception {
+        mockMvc.perform(delete("/api/clientes/1"))
+                .andExpect(status().isForbidden());
     }
 }

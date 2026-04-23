@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -22,6 +23,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
+@WithMockUser(roles = "ADMIN")
 class AuthControllerIT {
 
     @Autowired MockMvc mockMvc;
@@ -30,9 +32,17 @@ class AuthControllerIT {
 
     @BeforeEach
     void setupRoles() {
-        Role basicRole = new Role();
-        basicRole.setName(Role.Values.BASIC.name());
-        roleRepository.save(basicRole);
+        Role adminRole = new Role();
+        adminRole.setName(Role.Values.ADMIN.name());
+        roleRepository.save(adminRole);
+
+        Role operadorRole = new Role();
+        operadorRole.setName(Role.Values.OPERADOR.name());
+        roleRepository.save(operadorRole);
+
+        Role recepcaoRole = new Role();
+        recepcaoRole.setName(Role.Values.RECEPCAO.name());
+        roleRepository.save(recepcaoRole);
     }
 
     @Test
@@ -133,6 +143,18 @@ class AuthControllerIT {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @WithMockUser(roles = "OPERADOR")
+    @DisplayName("Deve retornar 403 ao tentar registrar sem role ADMIN")
+    void deveRetornar403RegistroSemRoleAdmin() throws Exception {
+        RegisterRequest request = new RegisterRequest("tentativa@email.com", "Senha@123");
+
+        mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isForbidden());
     }
 
     @Test

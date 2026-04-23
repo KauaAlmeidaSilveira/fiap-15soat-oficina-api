@@ -65,16 +65,34 @@ public class DataLoader {
             roleAdmin.setName(Role.Values.ADMIN.name());
             roleAdmin = roleRepo.save(roleAdmin);
 
-            Role roleBasic = new Role();
-            roleBasic.setName(Role.Values.BASIC.name());
-            roleBasic = roleRepo.save(roleBasic);
+            Role roleOperador = new Role();
+            roleOperador.setName(Role.Values.OPERADOR.name());
+            roleOperador = roleRepo.save(roleOperador);
 
-            // --- Usuário padrão (admin do sistema) ---
+            Role roleRecepcao = new Role();
+            roleRecepcao.setName(Role.Values.RECEPCAO.name());
+            roleRecepcao = roleRepo.save(roleRecepcao);
+
+            // --- Usuário admin (dono / gerente) ---
             User admin = new User();
             admin.setUsername("kaua@gmail.com");
             admin.setPassword(new BCryptPasswordEncoder().encode("Admin@123"));
-            admin.setRoles(Set.of(roleAdmin, roleBasic));
+            admin.setRoles(Set.of(roleAdmin));
             admin = userRepo.save(admin);
+
+            // --- Usuário recepcionista de exemplo ---
+            User recepcao = new User();
+            recepcao.setUsername("recepcao@oficina.com");
+            recepcao.setPassword(new BCryptPasswordEncoder().encode("Recepcao@123"));
+            recepcao.setRoles(Set.of(roleRecepcao));
+            userRepo.save(recepcao);
+
+            // --- Usuário operador de exemplo ---
+            User operador = new User();
+            operador.setUsername("operador@oficina.com");
+            operador.setPassword(new BCryptPasswordEncoder().encode("Operador@123"));
+            operador.setRoles(Set.of(roleOperador));
+            userRepo.save(operador);
 
             // --- Clientes ---
             Cliente joao = clienteRepo.save(Cliente.builder()

@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -31,6 +32,7 @@ public class OrdemServicoController {
     private final OrdemServicoService osService;
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPCAO')")
     @Operation(summary = "Criar nova Ordem de Serviço")
     public ResponseEntity<OrdemServicoResponse> criar(@Valid @RequestBody OrdemServicoRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(osService.criar(request));
@@ -59,18 +61,21 @@ public class OrdemServicoController {
     }
 
     @PatchMapping("/{id}/avancar-status")
+    @PreAuthorize("hasRole('OPERADOR')")
     @Operation(summary = "Avançar status da OS para o próximo")
     public ResponseEntity<OrdemServicoResponse> avancarStatus(@PathVariable Long id) {
         return ResponseEntity.ok(osService.avancarStatus(id));
     }
 
     @PatchMapping("/{id}/aprovar")
+    @PreAuthorize("hasRole('OPERADOR')")
     @Operation(summary = "Cliente aprova o orçamento da OS")
     public ResponseEntity<OrdemServicoResponse> aprovar(@PathVariable Long id) {
         return ResponseEntity.ok(osService.aprovar(id));
     }
 
     @PostMapping("/{id}/itens")
+    @PreAuthorize("hasRole('OPERADOR')")
     @Operation(summary = "Adicionar item à OS")
     public ResponseEntity<OrdemServicoResponse> adicionarItem(
             @PathVariable Long id,

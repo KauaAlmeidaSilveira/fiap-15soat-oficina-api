@@ -1,6 +1,7 @@
 package br.com.fiap.oficina.controller;
 
 import br.com.fiap.oficina.domain.enums.TipoProduto;
+import br.com.fiap.oficina.domain.enums.TipoMovimentacao;
 import br.com.fiap.oficina.dto.request.MovimentacaoEstoqueRequest;
 import br.com.fiap.oficina.dto.request.ProdutoRequest;
 import br.com.fiap.oficina.dto.response.MovimentacaoEstoqueResponse;
@@ -11,6 +12,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -33,6 +35,7 @@ public class ProdutoController {
     private final ProdutoService produtoService;
 
     @PostMapping
+    @PreAuthorize("hasRole('OPERADOR')")
     @Operation(summary = "Cadastrar produto (peça ou serviço)")
     public ResponseEntity<ProdutoResponse> criar(@Valid @RequestBody ProdutoRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(produtoService.criar(request));
@@ -53,6 +56,7 @@ public class ProdutoController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('OPERADOR')")
     @Operation(summary = "Atualizar produto")
     public ResponseEntity<ProdutoResponse> atualizar(@PathVariable Long id,
                                                      @Valid @RequestBody ProdutoRequest request) {
@@ -60,18 +64,31 @@ public class ProdutoController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('OPERADOR')")
     @Operation(summary = "Inativar produto")
     public ResponseEntity<Void> inativar(@PathVariable Long id) {
         produtoService.inativar(id);
         return ResponseEntity.noContent().build();
     }
 
-    @PostMapping("/estoque/movimentacao")
-    @Operation(summary = "Registrar entrada ou saída de estoque")
-    public ResponseEntity<MovimentacaoEstoqueResponse> movimentar(
+    @PostMapping("/estoque/entrada")
+    @PreAuthorize("hasAnyRole('ADMIN', 'OPERADOR')")
+    @Operation(summary = "Registrar entrada de estoque")
+    public ResponseEntity<MovimentacaoEstoqueResponse> registrarEntrada(
             @Valid @RequestBody MovimentacaoEstoqueRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(produtoService.registrarMovimentacao(request));
+        MovimentacaoEstoqueRequest req = new MovimentacaoEstoqueRequest(
+                request.produtoId(), TipoMovimentacao.ENTRADA, request.quantidade(), request.motivo(), request.ordemServicoId());
+        return ResponseEntity.status(HttpStatus.CREATED).body(produtoService.registrarMovimentacao(req));
+    }
+
+    @PostMapping("/estoque/saida")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Registrar saída manual de estoque (uso excepcional — somente admin)")
+    public ResponseEntity<MovimentacaoEstoqueResponse> registrarSaida(
+            @Valid @RequestBody MovimentacaoEstoqueRequest request) {
+        MovimentacaoEstoqueRequest req = new MovimentacaoEstoqueRequest(
+                request.produtoId(), TipoMovimentacao.SAIDA, request.quantidade(), request.motivo(), request.ordemServicoId());
+        return ResponseEntity.status(HttpStatus.CREATED).body(produtoService.registrarMovimentacao(req));
     }
 
     @GetMapping("/{id}/estoque/movimentacoes")

@@ -12,7 +12,7 @@ public record MovimentacaoEstoqueRequest(
     @NotNull(message = "Produto é obrigatório")
     Long produtoId,
 
-    @NotNull(message = "Tipo de movimentação é obrigatório")
+    // Tipo inferido pelo endpoint (/estoque/entrada ou /estoque/saida). Campo ignorado nas novas rotas.
     TipoMovimentacao tipo,
 
     @NotNull(message = "Quantidade é obrigatória")

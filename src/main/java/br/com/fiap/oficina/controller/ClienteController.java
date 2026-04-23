@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -29,6 +30,7 @@ public class ClienteController {
     private final ClienteService clienteService;
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPCAO')")
     @Operation(summary = "Cadastrar novo cliente")
     public ResponseEntity<ClienteResponse> criar(@Valid @RequestBody ClienteRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(clienteService.criar(request));
@@ -53,6 +55,7 @@ public class ClienteController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPCAO')")
     @Operation(summary = "Atualizar cliente")
     public ResponseEntity<ClienteResponse> atualizar(@PathVariable Long id,
                                                      @Valid @RequestBody ClienteRequest request) {
@@ -60,6 +63,7 @@ public class ClienteController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPCAO')")
     @Operation(summary = "Deletar cliente")
     public ResponseEntity<Void> deletar(@PathVariable Long id) {
         clienteService.deletar(id);

@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -29,6 +30,7 @@ public class VeiculoController {
     private final VeiculoService veiculoService;
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPCAO')")
     @Operation(summary = "Cadastrar veículo")
     public ResponseEntity<VeiculoResponse> criar(@Valid @RequestBody VeiculoRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(veiculoService.criar(request));
@@ -53,6 +55,7 @@ public class VeiculoController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPCAO')")
     @Operation(summary = "Atualizar veículo")
     public ResponseEntity<VeiculoResponse> atualizar(@PathVariable Long id,
                                                      @Valid @RequestBody VeiculoRequest request) {
@@ -60,6 +63,7 @@ public class VeiculoController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPCAO')")
     @Operation(summary = "Deletar veículo")
     public ResponseEntity<Void> deletar(@PathVariable Long id) {
         veiculoService.deletar(id);
@@ -67,6 +71,7 @@ public class VeiculoController {
     }
 
     @PostMapping("/{veiculoId}/clientes/{clienteId}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPCAO')")
     @Operation(summary = "Vincular cliente ao veículo")
     public ResponseEntity<Void> vincularCliente(@PathVariable Long veiculoId,
                                                 @PathVariable Long clienteId) {

@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
@@ -27,6 +28,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
+@WithMockUser(roles = {"ADMIN", "OPERADOR"})
 class ProdutoControllerIT {
 
     @Autowired MockMvc mockMvc;
@@ -83,7 +85,7 @@ class ProdutoControllerIT {
                 produtoId, TipoMovimentacao.ENTRADA,
                 new BigDecimal("10"), "Compra NF-001", null);
 
-        mockMvc.perform(post("/api/produtos/estoque/movimentacao")
+        mockMvc.perform(post("/api/produtos/estoque/entrada")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(movReq)))
                 .andExpect(status().isCreated())
@@ -114,7 +116,7 @@ class ProdutoControllerIT {
                 produtoId, TipoMovimentacao.SAIDA,
                 new BigDecimal("5"), "Uso em OS", null);
 
-        mockMvc.perform(post("/api/produtos/estoque/movimentacao")
+        mockMvc.perform(post("/api/produtos/estoque/saida")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(movReq)))
                 .andExpect(status().isConflict());
@@ -139,7 +141,7 @@ class ProdutoControllerIT {
                 produtoId, TipoMovimentacao.ENTRADA,
                 new BigDecimal("1"), null, null);
 
-        mockMvc.perform(post("/api/produtos/estoque/movimentacao")
+        mockMvc.perform(post("/api/produtos/estoque/entrada")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(movReq)))
                 .andExpect(status().isUnprocessableEntity());
@@ -236,6 +238,33 @@ class ProdutoControllerIT {
 
         mockMvc.perform(get("/api/produtos/" + id + "/estoque/movimentacoes"))
                 .andExpect(status().isOk());
+    }
+
+    @Test
+    @WithMockUser(roles = "RECEPCAO")
+    @DisplayName("Deve retornar 403 ao criar produto sem role OPERADOR")
+    void deveRetornar403AoCriarProdutoSemPermissao() throws Exception {
+        ProdutoRequest req = new ProdutoRequest(
+                "Item Negado", null, TipoProduto.PECA,
+                new BigDecimal("10.00"), "UN", null);
+
+        mockMvc.perform(post("/api/produtos")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(roles = "OPERADOR")
+    @DisplayName("Deve retornar 403 ao registrar saída manual sem role ADMIN")
+    void deveRetornar403AoRegistrarSaidaSemPermissao() throws Exception {
+        MovimentacaoEstoqueRequest req = new MovimentacaoEstoqueRequest(
+                1L, TipoMovimentacao.SAIDA, new BigDecimal("1"), "Teste", null);
+
+        mockMvc.perform(post("/api/produtos/estoque/saida")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isForbidden());
     }
 }
 

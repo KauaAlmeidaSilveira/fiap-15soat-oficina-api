@@ -20,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
@@ -44,13 +45,18 @@ public class AuthService {
         }
 
         Instant now = Instant.now();
-        long expiresIn = 300L;
+        long expiresIn = 28800L;
+
+        List<String> roles = user.getRoles().stream()
+                .map(Role::getName)
+                .toList();
 
         var claims = JwtClaimsSet.builder()
                 .issuer("back-end")
                 .issuedAt(now)
                 .subject(user.getUsername())
                 .expiresAt(now.plusSeconds(expiresIn))
+                .claim("roles", roles)
                 .build();
 
         var jwtValue = jwtEncoder.encode(JwtEncoderParameters.from(claims)).getTokenValue();
@@ -66,13 +72,13 @@ public class AuthService {
             throw new RegraDeNegocioException("Usuário já cadastrado");
         }
 
-        Role basicRole = roleRepository.findById(Role.Values.BASIC.getRoleId())
-                .orElseThrow(() -> new IllegalStateException("Perfil padrão BASIC não encontrado"));
+        Role operadorRole = roleRepository.findByName(Role.Values.OPERADOR.name())
+                .orElseThrow(() -> new IllegalStateException("Perfil OPERADOR não encontrado"));
 
         User user = new User();
         user.setUsername(normalizedUsername);
         user.setPassword(passwordEncoder.encode(registerRequest.password()));
-        user.setRoles(Set.of(basicRole));
+        user.setRoles(Set.of(operadorRole));
 
         User savedUser = userRepository.save(user);
 

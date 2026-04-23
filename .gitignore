@@ -34,3 +34,8 @@ out/
 
 # Maven
 target/
+
+# JWT Keys - nunca versionar chaves RSA no repositorio
+# Gere localmente com os comandos no README
+src/main/resources/jwt.private.key
+src/main/resources/jwt.public.key

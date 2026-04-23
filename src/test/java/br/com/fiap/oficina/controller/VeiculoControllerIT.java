@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
@@ -24,6 +25,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
+@WithMockUser(roles = {"ADMIN", "RECEPCAO"})
 class VeiculoControllerIT {
 
     @Autowired MockMvc mockMvc;
@@ -226,6 +228,26 @@ class VeiculoControllerIT {
 
         mockMvc.perform(get("/api/veiculos/" + id))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @WithMockUser(roles = "OPERADOR")
+    @DisplayName("Deve retornar 403 ao criar veículo sem permissão")
+    void deveRetornar403AoCriarVeiculoSemPermissao() throws Exception {
+        VeiculoRequest req = new VeiculoRequest("GHI1234", "Ford", "Ka", 2020, "Preto", null);
+
+        mockMvc.perform(post("/api/veiculos")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(roles = "OPERADOR")
+    @DisplayName("Deve retornar 403 ao deletar veículo sem permissão")
+    void deveRetornar403AoDeletarVeiculoSemPermissao() throws Exception {
+        mockMvc.perform(delete("/api/veiculos/1"))
+                .andExpect(status().isForbidden());
     }
 }
 

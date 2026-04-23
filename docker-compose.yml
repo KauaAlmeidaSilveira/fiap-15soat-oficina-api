@@ -29,6 +29,15 @@ services:
     environment:
       SPRING_PROFILES_ACTIVE: default
       DB_HOST: postgres
+      DB_PASSWORD: oficina123
+      # As chaves JWT sao montadas como arquivos e referenciadas via variavel de ambiente.
+      # Em producao (K8s, ECS, etc.), substitua os volumes por secrets gerenciados
+      # e mantenha o mesmo padrao de variavel: JWT_PUBLIC_KEY=file:/caminho/da/chave
+      JWT_PUBLIC_KEY: file:/run/secrets/jwt.public.key
+      JWT_PRIVATE_KEY: file:/run/secrets/jwt.private.key
+    volumes:
+      - ./src/main/resources/jwt.public.key:/run/secrets/jwt.public.key:ro
+      - ./src/main/resources/jwt.private.key:/run/secrets/jwt.private.key:ro
     depends_on:
       postgres:
         condition: service_healthy

@@ -14,6 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
@@ -30,6 +31,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
+@WithMockUser(roles = {"ADMIN", "RECEPCAO", "OPERADOR"})
 class OrdemServicoControllerIT {
 
     @Autowired MockMvc mockMvc;
@@ -200,6 +202,22 @@ class OrdemServicoControllerIT {
         mockMvc.perform(get("/api/ordens-servico/metricas/tempo-medio"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.tempoMedioHoras").exists());
+    }
+
+    @Test
+    @WithMockUser(roles = "RECEPCAO")
+    @DisplayName("Deve retornar 403 ao avançar status sem role OPERADOR")
+    void deveRetornar403AoAvancarStatusSemPermissao() throws Exception {
+        mockMvc.perform(patch("/api/ordens-servico/99999/avancar-status"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(roles = "RECEPCAO")
+    @DisplayName("Deve retornar 403 ao aprovar OS sem role OPERADOR")
+    void deveRetornar403AoAprovarSemPermissao() throws Exception {
+        mockMvc.perform(patch("/api/ordens-servico/99999/aprovar"))
+                .andExpect(status().isForbidden());
     }
 }
 
