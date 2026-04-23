@@ -61,21 +61,21 @@ public class OrdemServicoController {
     }
 
     @PatchMapping("/{id}/avancar-status")
-    @PreAuthorize("hasRole('OPERADOR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'OPERADOR')")
     @Operation(summary = "Avançar status da OS para o próximo")
     public ResponseEntity<OrdemServicoResponse> avancarStatus(@PathVariable Long id) {
         return ResponseEntity.ok(osService.avancarStatus(id));
     }
 
     @PatchMapping("/{id}/aprovar")
-    @PreAuthorize("hasRole('OPERADOR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'OPERADOR')")
     @Operation(summary = "Cliente aprova o orçamento da OS")
     public ResponseEntity<OrdemServicoResponse> aprovar(@PathVariable Long id) {
         return ResponseEntity.ok(osService.aprovar(id));
     }
 
     @PostMapping("/{id}/itens")
-    @PreAuthorize("hasRole('OPERADOR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'OPERADOR')")
     @Operation(summary = "Adicionar item à OS")
     public ResponseEntity<OrdemServicoResponse> adicionarItem(
             @PathVariable Long id,

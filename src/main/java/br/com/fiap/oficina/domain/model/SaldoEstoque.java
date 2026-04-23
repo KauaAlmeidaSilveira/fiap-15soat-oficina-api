@@ -17,7 +17,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
@@ -35,8 +34,8 @@ public class SaldoEstoque {
     @JoinColumn(name = "produto_id", nullable = false, unique = true)
     private Produto produto;
 
-    @Column(nullable = false, precision = 10, scale = 3)
-    private BigDecimal quantidade;
+    @Column(nullable = false)
+    private Integer quantidade;
 
     @Column(nullable = false)
     private LocalDateTime atualizadoEm;

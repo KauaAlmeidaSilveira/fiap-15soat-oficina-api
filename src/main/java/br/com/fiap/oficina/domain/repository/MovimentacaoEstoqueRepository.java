@@ -7,7 +7,6 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.math.BigDecimal;
 import java.util.List;
 
 @Repository
@@ -24,5 +23,5 @@ public interface MovimentacaoEstoqueRepository extends JpaRepository<Movimentaca
         FROM MovimentacaoEstoque m
         WHERE m.produto.id = :produtoId
     """)
-    BigDecimal calcularSaldoPorProduto(@Param("produtoId") Long produtoId);
+    Integer calcularSaldoPorProduto(@Param("produtoId") Long produtoId);
 }

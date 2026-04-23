@@ -159,7 +159,7 @@ class OrdemServicoServiceUnitTest {
     @DisplayName("Deve adicionar item à OS")
     void deveAdicionarItemOS() {
         OrdemServicoRequest.OsItemRequest itemReq = new OrdemServicoRequest.OsItemRequest(
-                1L, new BigDecimal("2"), null, null);
+                1L, 2, null, null);
 
         when(osRepository.findById(1L)).thenReturn(Optional.of(os));
         when(produtoRepository.findById(1L)).thenReturn(Optional.of(peca));
@@ -177,7 +177,7 @@ class OrdemServicoServiceUnitTest {
     void deveLancarExcecaoAdicionarItemOSFinalizada() {
         os.setStatus(StatusOS.FINALIZADA);
         OrdemServicoRequest.OsItemRequest itemReq = new OrdemServicoRequest.OsItemRequest(
-                1L, new BigDecimal("1"), null, null);
+                1L, 1, null, null);
 
         when(osRepository.findById(1L)).thenReturn(Optional.of(os));
 

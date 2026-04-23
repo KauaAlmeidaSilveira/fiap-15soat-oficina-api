@@ -71,7 +71,7 @@ class ProdutoServiceUnitTest {
         saldo = SaldoEstoque.builder()
                 .id(1L)
                 .produto(peca)
-                .quantidade(new BigDecimal("10"))
+                .quantidade(10)
                 .build();
         peca.setSaldoEstoque(saldo);
     }
@@ -112,22 +112,22 @@ class ProdutoServiceUnitTest {
     void deveRegistrarEntradaEstoque() {
         MovimentacaoEstoqueRequest request = new MovimentacaoEstoqueRequest(
                 1L, TipoMovimentacao.ENTRADA,
-                new BigDecimal("5"), "Compra NF 001", null);
+                5, "Compra NF 001", null);
 
         MovimentacaoEstoque mov = MovimentacaoEstoque.builder()
                 .id(1L).produto(peca).tipo(TipoMovimentacao.ENTRADA)
-                .quantidade(new BigDecimal("5")).criadoEm(LocalDateTime.now()).build();
+                .quantidade(5).criadoEm(LocalDateTime.now()).build();
 
         when(produtoRepository.findById(1L)).thenReturn(Optional.of(peca));
         when(saldoEstoqueRepository.findByProdutoId(1L)).thenReturn(Optional.of(saldo));
         when(saldoEstoqueRepository.save(any())).thenReturn(saldo);
         when(movimentacaoEstoqueRepository.save(any())).thenReturn(mov);
-        when(movimentacaoEstoqueRepository.calcularSaldoPorProduto(1L)).thenReturn(new BigDecimal("15"));
+        when(movimentacaoEstoqueRepository.calcularSaldoPorProduto(1L)).thenReturn(15);
 
         MovimentacaoEstoqueResponse response = produtoService.registrarMovimentacao(request);
 
         assertThat(response.tipo()).isEqualTo(TipoMovimentacao.ENTRADA);
-        assertThat(saldo.getQuantidade()).isEqualByComparingTo(new BigDecimal("15"));
+        assertThat(saldo.getQuantidade()).isEqualTo(15);
     }
 
     @Test
@@ -135,7 +135,7 @@ class ProdutoServiceUnitTest {
     void deveLancarExcecaoMovimentacaoServico() {
         MovimentacaoEstoqueRequest request = new MovimentacaoEstoqueRequest(
                 2L, TipoMovimentacao.ENTRADA,
-                new BigDecimal("5"), null, null);
+                5, null, null);
 
         when(produtoRepository.findById(2L)).thenReturn(Optional.of(servico));
 

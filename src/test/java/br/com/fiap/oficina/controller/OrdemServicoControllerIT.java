@@ -110,7 +110,7 @@ class OrdemServicoControllerIT {
                 .get("id").asLong();
 
         OrdemServicoRequest.OsItemRequest item = new OrdemServicoRequest.OsItemRequest(
-                produtoId, new BigDecimal("2"), null, null);
+                produtoId, 2, null, null);
         OrdemServicoRequest osRequest = new OrdemServicoRequest(
                 clienteId, veiculoId, "Revisão completa", null, List.of(item));
 
@@ -188,7 +188,7 @@ class OrdemServicoControllerIT {
         Long osId = objectMapper.readTree(osResult.getResponse().getContentAsString()).get("id").asLong();
 
         OrdemServicoRequest.OsItemRequest item = new OrdemServicoRequest.OsItemRequest(
-                produtoId, new BigDecimal("1"), null, "Item adicional");
+                produtoId, 1, null, "Item adicional");
         mockMvc.perform(post("/api/ordens-servico/" + osId + "/itens")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(item)))

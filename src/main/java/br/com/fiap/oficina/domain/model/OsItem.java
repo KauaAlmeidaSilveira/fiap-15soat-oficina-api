@@ -38,8 +38,8 @@ public class OsItem {
     @JoinColumn(name = "produto_id", nullable = false)
     private Produto produto;
 
-    @Column(nullable = false, precision = 10, scale = 3)
-    private BigDecimal quantidade;
+    @Column(nullable = false)
+    private Integer quantidade;
 
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal precoUnitario;

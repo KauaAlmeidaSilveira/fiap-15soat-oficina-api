@@ -128,9 +128,9 @@ class OrdemServicoUnitTest {
                 .precoUnitario(new BigDecimal("50.00")).ativo(true).build();
 
         OrdemServicoRequest.OsItemRequest item1 =
-                new OrdemServicoRequest.OsItemRequest(2L, new BigDecimal("2"), new BigDecimal("50.00"), null);
+                new OrdemServicoRequest.OsItemRequest(2L, 2, new BigDecimal("50.00"), null);
         OrdemServicoRequest.OsItemRequest item2 =
-                new OrdemServicoRequest.OsItemRequest(2L, new BigDecimal("1"), new BigDecimal("200.00"), null);
+                new OrdemServicoRequest.OsItemRequest(2L, 1, new BigDecimal("200.00"), null);
         OrdemServicoRequest request = new OrdemServicoRequest(1L, 1L, "Revisão", null, List.of(item1, item2));
 
         when(clienteRepository.findById(1L)).thenReturn(Optional.of(cliente));

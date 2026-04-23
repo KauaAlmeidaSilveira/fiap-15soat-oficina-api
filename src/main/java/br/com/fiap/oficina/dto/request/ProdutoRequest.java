@@ -2,6 +2,7 @@ package br.com.fiap.oficina.dto.request;
 
 import br.com.fiap.oficina.domain.enums.TipoProduto;
 import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -27,6 +28,6 @@ public record ProdutoRequest(
     @Size(max = 20)
     String unidadeMedida,
 
-    @DecimalMin(value = "0.0", message = "Quantidade inicial não pode ser negativa")
-    BigDecimal quantidadeInicial
+    @Min(value = 0, message = "Quantidade inicial não pode ser negativa")
+    Integer quantidadeInicial
 ) {}

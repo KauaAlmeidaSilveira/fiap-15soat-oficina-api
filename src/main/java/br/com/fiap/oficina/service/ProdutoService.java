@@ -20,7 +20,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
 import java.util.List;
 
 @Service
@@ -47,13 +46,13 @@ public class ProdutoService {
         if (TipoProduto.PECA.equals(produto.getTipo())) {
             SaldoEstoque saldo = SaldoEstoque.builder()
                     .produto(produto)
-                    .quantidade(BigDecimal.ZERO)
+                    .quantidade(0)
                     .build();
             SaldoEstoque savedSaldo = saldoEstoqueRepository.save(saldo);
             produto.setSaldoEstoque(savedSaldo);
 
             if (request.quantidadeInicial() != null
-                    && request.quantidadeInicial().compareTo(BigDecimal.ZERO) > 0) {
+                    && request.quantidadeInicial() > 0) {
                 MovimentacaoEstoque mov = MovimentacaoEstoque.builder()
                         .produto(produto)
                         .tipo(TipoMovimentacao.ENTRADA)
@@ -108,10 +107,10 @@ public class ProdutoService {
         }
 
         if (request.tipo() == TipoMovimentacao.SAIDA) {
-            BigDecimal saldoAtual = saldoEstoqueRepository.findByProdutoId(produto.getId())
+            Integer saldoAtual = saldoEstoqueRepository.findByProdutoId(produto.getId())
                     .map(SaldoEstoque::getQuantidade)
-                    .orElse(BigDecimal.ZERO);
-            if (saldoAtual.compareTo(request.quantidade()) < 0) {
+                    .orElse(0);
+            if (saldoAtual < request.quantidade()) {
                 throw new IllegalStateException(
                         "Saldo insuficiente. Disponível: " + saldoAtual + ", solicitado: " + request.quantidade());
             }
@@ -155,7 +154,7 @@ public class ProdutoService {
     }
 
     public ProdutoResponse toResponse(Produto p) {
-        BigDecimal saldo = null;
+        Integer saldo = null;
         if (TipoProduto.PECA.equals(p.getTipo()) && p.getSaldoEstoque() != null) {
             saldo = p.getSaldoEstoque().getQuantidade();
         }
@@ -166,8 +165,8 @@ public class ProdutoService {
 
     public void sincronizarSaldo(Long produtoId) {
         saldoEstoqueRepository.findByProdutoId(produtoId).ifPresent(saldo -> {
-            BigDecimal calculado = movimentacaoEstoqueRepository.calcularSaldoPorProduto(produtoId);
-            saldo.setQuantidade(calculado != null ? calculado : BigDecimal.ZERO);
+            Integer calculado = movimentacaoEstoqueRepository.calcularSaldoPorProduto(produtoId);
+            saldo.setQuantidade(calculado != null ? calculado : 0);
             saldoEstoqueRepository.save(saldo);
         });
     }

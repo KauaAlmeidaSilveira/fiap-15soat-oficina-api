@@ -74,7 +74,7 @@ class OsItemUnitTest {
         mockBase(produto);
 
         OrdemServicoRequest.OsItemRequest item =
-                new OrdemServicoRequest.OsItemRequest(2L, new BigDecimal("4"), new BigDecimal("120.00"), null);
+                new OrdemServicoRequest.OsItemRequest(2L, 4, new BigDecimal("120.00"), null);
         OrdemServicoRequest request = new OrdemServicoRequest(1L, 1L, "Freios", null, List.of(item));
 
         OrdemServicoResponse response = osService.criar(request);
@@ -83,19 +83,19 @@ class OsItemUnitTest {
     }
 
     @Test
-    @DisplayName("Serviço deve calcular subtotal com quantidade fracionada")
-    void deveCalcularSubtotalFracionado() {
-        Produto produto = Produto.builder().id(2L).nome("Óleo 5W30").tipo(TipoProduto.PECA)
+    @DisplayName("Serviço deve calcular subtotal com múltiplas unidades")
+    void deveCalcularSubtotalMultiplasUnidades() {
+        Produto produto = Produto.builder().id(2L).nome("Oleo 5W30").tipo(TipoProduto.PECA)
                 .precoUnitario(new BigDecimal("28.00")).ativo(true).build();
         mockBase(produto);
 
         OrdemServicoRequest.OsItemRequest item =
-                new OrdemServicoRequest.OsItemRequest(2L, new BigDecimal("1.5"), new BigDecimal("28.00"), null);
-        OrdemServicoRequest request = new OrdemServicoRequest(1L, 1L, "Troca de óleo", null, List.of(item));
+                new OrdemServicoRequest.OsItemRequest(2L, 3, new BigDecimal("28.00"), null);
+        OrdemServicoRequest request = new OrdemServicoRequest(1L, 1L, "Troca de oleo", null, List.of(item));
 
         OrdemServicoResponse response = osService.criar(request);
 
-        assertThat(response.valorTotal()).isEqualByComparingTo(new BigDecimal("42.00"));
+        assertThat(response.valorTotal()).isEqualByComparingTo(new BigDecimal("84.00"));
     }
 
     @Test
@@ -106,9 +106,9 @@ class OsItemUnitTest {
         mockBase(produto);
 
         OrdemServicoRequest.OsItemRequest item1 =
-                new OrdemServicoRequest.OsItemRequest(2L, new BigDecimal("2"), new BigDecimal("50.00"), null);
+                new OrdemServicoRequest.OsItemRequest(2L, 2, new BigDecimal("50.00"), null);
         OrdemServicoRequest.OsItemRequest item2 =
-                new OrdemServicoRequest.OsItemRequest(2L, new BigDecimal("1"), new BigDecimal("200.00"), null);
+                new OrdemServicoRequest.OsItemRequest(2L, 1, new BigDecimal("200.00"), null);
         OrdemServicoRequest request = new OrdemServicoRequest(1L, 1L, "Revisão", null, List.of(item1, item2));
 
         OrdemServicoResponse response = osService.criar(request);
@@ -124,7 +124,7 @@ class OsItemUnitTest {
         mockBase(produto);
 
         OrdemServicoRequest.OsItemRequest item =
-                new OrdemServicoRequest.OsItemRequest(2L, new BigDecimal("2"), null, null);
+                new OrdemServicoRequest.OsItemRequest(2L, 2, null, null);
         OrdemServicoRequest request = new OrdemServicoRequest(1L, 1L, "Manutenção", null, List.of(item));
 
         OrdemServicoResponse response = osService.criar(request);

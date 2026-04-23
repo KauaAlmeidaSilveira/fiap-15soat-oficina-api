@@ -1,11 +1,9 @@
 package br.com.fiap.oficina.dto.request;
 
 import br.com.fiap.oficina.domain.enums.TipoMovimentacao;
-import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-
-import java.math.BigDecimal;
 
 public record MovimentacaoEstoqueRequest(
 
@@ -16,8 +14,8 @@ public record MovimentacaoEstoqueRequest(
     TipoMovimentacao tipo,
 
     @NotNull(message = "Quantidade é obrigatória")
-    @DecimalMin(value = "0.001", message = "Quantidade deve ser maior que zero")
-    BigDecimal quantidade,
+    @Min(value = 1, message = "Quantidade deve ser maior que zero")
+    Integer quantidade,
 
     @Size(max = 255)
     String motivo,

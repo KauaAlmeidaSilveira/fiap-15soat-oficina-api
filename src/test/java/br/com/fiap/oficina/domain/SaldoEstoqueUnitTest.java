@@ -46,7 +46,7 @@ class SaldoEstoqueUnitTest {
     void setup() {
         peca = Produto.builder().id(1L).nome("Filtro").tipo(TipoProduto.PECA)
                 .precoUnitario(new BigDecimal("45.00")).ativo(true).criadoEm(LocalDateTime.now()).build();
-        saldo = SaldoEstoque.builder().id(1L).produto(peca).quantidade(BigDecimal.ZERO).build();
+        saldo = SaldoEstoque.builder().id(1L).produto(peca).quantidade(0).build();
         peca.setSaldoEstoque(saldo);
     }
 
@@ -54,51 +54,51 @@ class SaldoEstoqueUnitTest {
     @DisplayName("Serviço deve registrar entrada e aumentar saldo")
     void deveRegistrarEntradaEAumentarSaldo() {
         MovimentacaoEstoqueRequest request = new MovimentacaoEstoqueRequest(
-                1L, TipoMovimentacao.ENTRADA, new BigDecimal("10"), "Compra NF-001", null);
+                1L, TipoMovimentacao.ENTRADA, 10, "Compra NF-001", null);
         MovimentacaoEstoque mov = MovimentacaoEstoque.builder()
                 .id(1L).produto(peca).tipo(TipoMovimentacao.ENTRADA)
-                .quantidade(new BigDecimal("10")).criadoEm(LocalDateTime.now()).build();
+                .quantidade(10).criadoEm(LocalDateTime.now()).build();
 
         when(produtoRepository.findById(1L)).thenReturn(Optional.of(peca));
         when(movimentacaoEstoqueRepository.save(any())).thenReturn(mov);
         when(saldoEstoqueRepository.findByProdutoId(1L)).thenReturn(Optional.of(saldo));
-        when(movimentacaoEstoqueRepository.calcularSaldoPorProduto(1L)).thenReturn(new BigDecimal("10"));
+        when(movimentacaoEstoqueRepository.calcularSaldoPorProduto(1L)).thenReturn(10);
         when(saldoEstoqueRepository.save(any())).thenReturn(saldo);
 
         MovimentacaoEstoqueResponse response = produtoService.registrarMovimentacao(request);
 
         assertThat(response.tipo()).isEqualTo(TipoMovimentacao.ENTRADA);
-        assertThat(saldo.getQuantidade()).isEqualByComparingTo(new BigDecimal("10"));
+        assertThat(saldo.getQuantidade()).isEqualTo(10);
     }
 
     @Test
     @DisplayName("Serviço deve registrar saída e diminuir saldo")
     void deveRegistrarSaidaEDiminuirSaldo() {
-        saldo.setQuantidade(new BigDecimal("10"));
+        saldo.setQuantidade(10);
         MovimentacaoEstoqueRequest request = new MovimentacaoEstoqueRequest(
-                1L, TipoMovimentacao.SAIDA, new BigDecimal("3"), "Uso em OS", null);
+                1L, TipoMovimentacao.SAIDA, 3, "Uso em OS", null);
         MovimentacaoEstoque mov = MovimentacaoEstoque.builder()
                 .id(2L).produto(peca).tipo(TipoMovimentacao.SAIDA)
-                .quantidade(new BigDecimal("3")).criadoEm(LocalDateTime.now()).build();
+                .quantidade(3).criadoEm(LocalDateTime.now()).build();
 
         when(produtoRepository.findById(1L)).thenReturn(Optional.of(peca));
         when(saldoEstoqueRepository.findByProdutoId(1L)).thenReturn(Optional.of(saldo));
         when(movimentacaoEstoqueRepository.save(any())).thenReturn(mov);
-        when(movimentacaoEstoqueRepository.calcularSaldoPorProduto(1L)).thenReturn(new BigDecimal("7"));
+        when(movimentacaoEstoqueRepository.calcularSaldoPorProduto(1L)).thenReturn(7);
         when(saldoEstoqueRepository.save(any())).thenReturn(saldo);
 
         MovimentacaoEstoqueResponse response = produtoService.registrarMovimentacao(request);
 
         assertThat(response.tipo()).isEqualTo(TipoMovimentacao.SAIDA);
-        assertThat(saldo.getQuantidade()).isEqualByComparingTo(new BigDecimal("7"));
+        assertThat(saldo.getQuantidade()).isEqualTo(7);
     }
 
     @Test
     @DisplayName("Serviço deve lançar exceção quando saldo insuficiente para saída")
     void deveLancarExcecaoSaldoInsuficiente() {
-        saldo.setQuantidade(new BigDecimal("2"));
+        saldo.setQuantidade(2);
         MovimentacaoEstoqueRequest request = new MovimentacaoEstoqueRequest(
-                1L, TipoMovimentacao.SAIDA, new BigDecimal("5"), "Uso em OS", null);
+                1L, TipoMovimentacao.SAIDA, 5, "Uso em OS", null);
 
         when(produtoRepository.findById(1L)).thenReturn(Optional.of(peca));
         when(saldoEstoqueRepository.findByProdutoId(1L)).thenReturn(Optional.of(saldo));
@@ -114,7 +114,7 @@ class SaldoEstoqueUnitTest {
         Produto servico = Produto.builder().id(2L).nome("Diagnóstico").tipo(TipoProduto.SERVICO)
                 .precoUnitario(new BigDecimal("120.00")).ativo(true).build();
         MovimentacaoEstoqueRequest request = new MovimentacaoEstoqueRequest(
-                2L, TipoMovimentacao.ENTRADA, new BigDecimal("1"), null, null);
+                2L, TipoMovimentacao.ENTRADA, 1, null, null);
 
         when(produtoRepository.findById(2L)).thenReturn(Optional.of(servico));
 
@@ -127,11 +127,11 @@ class SaldoEstoqueUnitTest {
     @DisplayName("Serviço deve sincronizar saldo com total calculado das movimentações")
     void deveSincronizarSaldoComTotalMovimentacoes() {
         when(saldoEstoqueRepository.findByProdutoId(1L)).thenReturn(Optional.of(saldo));
-        when(movimentacaoEstoqueRepository.calcularSaldoPorProduto(1L)).thenReturn(new BigDecimal("15"));
+        when(movimentacaoEstoqueRepository.calcularSaldoPorProduto(1L)).thenReturn(15);
         when(saldoEstoqueRepository.save(any())).thenReturn(saldo);
 
         produtoService.sincronizarSaldo(1L);
 
-        assertThat(saldo.getQuantidade()).isEqualByComparingTo(new BigDecimal("15"));
+        assertThat(saldo.getQuantidade()).isEqualTo(15);
     }
 }

@@ -195,7 +195,7 @@ public class OrdemServicoService {
     private BigDecimal calcularTotal(List<OsItem> itens) {
         return itens.stream()
                 .map(i -> i.getQuantidade() != null && i.getPrecoUnitario() != null
-                        ? i.getQuantidade().multiply(i.getPrecoUnitario())
+                        ? BigDecimal.valueOf(i.getQuantidade()).multiply(i.getPrecoUnitario())
                         : BigDecimal.ZERO)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
@@ -228,7 +228,7 @@ public class OrdemServicoService {
                         item.getQuantidade(),
                         item.getPrecoUnitario(),
                         item.getQuantidade() != null && item.getPrecoUnitario() != null
-                                ? item.getQuantidade().multiply(item.getPrecoUnitario())
+                                ? BigDecimal.valueOf(item.getQuantidade()).multiply(item.getPrecoUnitario())
                                 : BigDecimal.ZERO,
                         item.getObservacao()
                 )).toList();

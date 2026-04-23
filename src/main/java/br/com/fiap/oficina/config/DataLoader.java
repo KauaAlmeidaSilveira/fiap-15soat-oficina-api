@@ -170,14 +170,14 @@ public class DataLoader {
                     .build();
             os1.getItens().addAll(List.of(
                     OsItem.builder().ordemServico(os1).produto(trocaOleo)
-                            .quantidade(BigDecimal.ONE).precoUnitario(trocaOleo.getPrecoUnitario()).build(),
+                            .quantidade(1).precoUnitario(trocaOleo.getPrecoUnitario()).build(),
                     OsItem.builder().ordemServico(os1).produto(oleoMotor)
-                            .quantidade(new BigDecimal("4")).precoUnitario(oleoMotor.getPrecoUnitario()).build(),
+                            .quantidade(4).precoUnitario(oleoMotor.getPrecoUnitario()).build(),
                     OsItem.builder().ordemServico(os1).produto(filtroOleo)
-                            .quantidade(BigDecimal.ONE).precoUnitario(filtroOleo.getPrecoUnitario()).build()
+                            .quantidade(1).precoUnitario(filtroOleo.getPrecoUnitario()).build()
             ));
             BigDecimal totalOs1 = os1.getItens().stream()
-                    .map(i -> i.getQuantidade().multiply(i.getPrecoUnitario()))
+                    .map(i -> BigDecimal.valueOf(i.getQuantidade()).multiply(i.getPrecoUnitario()))
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
             os1.setValorTotal(totalOs1);
             osRepo.save(os1);
@@ -208,12 +208,11 @@ public class DataLoader {
         Produto p = prodRepo.save(Produto.builder()
                 .nome(nome).descricao(desc).tipo(TipoProduto.PECA)
                 .precoUnitario(new BigDecimal(preco)).unidadeMedida(unidade).ativo(true).build());
-        BigDecimal qtd = new BigDecimal(qtdInicial);
-        saldoRepo.save(SaldoEstoque.builder().produto(p).quantidade(qtd).build());
+        saldoRepo.save(SaldoEstoque.builder().produto(p).quantidade(qtdInicial).build());
         movRepo.save(MovimentacaoEstoque.builder()
                 .produto(p)
                 .tipo(TipoMovimentacao.ENTRADA)
-                .quantidade(qtd)
+                .quantidade(qtdInicial)
                 .motivo("Estoque inicial - carga do sistema")
                 .build());
         return p;

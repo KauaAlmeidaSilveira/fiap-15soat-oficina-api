@@ -19,7 +19,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
@@ -41,8 +40,8 @@ public class MovimentacaoEstoque {
     @Column(nullable = false)
     private TipoMovimentacao tipo;
 
-    @Column(nullable = false, precision = 10, scale = 3)
-    private BigDecimal quantidade;
+    @Column(nullable = false)
+    private Integer quantidade;
 
     @Column(length = 255)
     private String motivo;

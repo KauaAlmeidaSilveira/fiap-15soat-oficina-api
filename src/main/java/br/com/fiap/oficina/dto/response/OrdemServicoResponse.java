@@ -27,7 +27,7 @@ public record OrdemServicoResponse(
         Long produtoId,
         String produtoNome,
         String produtoTipo,
-        BigDecimal quantidade,
+        Integer quantidade,
         BigDecimal precoUnitario,
         BigDecimal subtotal,
         String observacao

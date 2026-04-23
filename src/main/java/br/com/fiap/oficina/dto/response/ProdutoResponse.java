@@ -13,6 +13,6 @@ public record ProdutoResponse(
     BigDecimal precoUnitario,
     String unidadeMedida,
     Boolean ativo,
-    BigDecimal saldoEstoque,
+    Integer saldoEstoque,
     LocalDateTime criadoEm
 ) {}

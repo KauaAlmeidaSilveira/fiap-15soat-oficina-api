@@ -2,7 +2,6 @@ package br.com.fiap.oficina.dto.response;
 
 import br.com.fiap.oficina.domain.enums.TipoMovimentacao;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 public record MovimentacaoEstoqueResponse(
@@ -10,7 +9,7 @@ public record MovimentacaoEstoqueResponse(
     Long produtoId,
     String produtoNome,
     TipoMovimentacao tipo,
-    BigDecimal quantidade,
+    Integer quantidade,
     String motivo,
     Long ordemServicoId,
     LocalDateTime criadoEm

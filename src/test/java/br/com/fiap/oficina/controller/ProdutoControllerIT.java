@@ -83,7 +83,7 @@ class ProdutoControllerIT {
 
         MovimentacaoEstoqueRequest movReq = new MovimentacaoEstoqueRequest(
                 produtoId, TipoMovimentacao.ENTRADA,
-                new BigDecimal("10"), "Compra NF-001", null);
+                10, "Compra NF-001", null);
 
         mockMvc.perform(post("/api/produtos/estoque/entrada")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -114,7 +114,7 @@ class ProdutoControllerIT {
 
         MovimentacaoEstoqueRequest movReq = new MovimentacaoEstoqueRequest(
                 produtoId, TipoMovimentacao.SAIDA,
-                new BigDecimal("5"), "Uso em OS", null);
+                5, "Uso em OS", null);
 
         mockMvc.perform(post("/api/produtos/estoque/saida")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -139,7 +139,7 @@ class ProdutoControllerIT {
 
         MovimentacaoEstoqueRequest movReq = new MovimentacaoEstoqueRequest(
                 produtoId, TipoMovimentacao.ENTRADA,
-                new BigDecimal("1"), null, null);
+                1, null, null);
 
         mockMvc.perform(post("/api/produtos/estoque/entrada")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -259,7 +259,7 @@ class ProdutoControllerIT {
     @DisplayName("Deve retornar 403 ao registrar saída manual sem role ADMIN")
     void deveRetornar403AoRegistrarSaidaSemPermissao() throws Exception {
         MovimentacaoEstoqueRequest req = new MovimentacaoEstoqueRequest(
-                1L, TipoMovimentacao.SAIDA, new BigDecimal("1"), "Teste", null);
+                1L, TipoMovimentacao.SAIDA, 1, "Teste", null);
 
         mockMvc.perform(post("/api/produtos/estoque/saida")
                         .contentType(MediaType.APPLICATION_JSON)
