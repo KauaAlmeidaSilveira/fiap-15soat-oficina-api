@@ -29,9 +29,9 @@
 - [x] Monitoramento do tempo médio de execução dos serviços
 
 ### Segurança e qualidade
-- [ ] Implementação de autenticação JWT para APIs administrativas
+- [x] Implementação de autenticação JWT para APIs administrativas
 - [x] Validação dos dados sensíveis (CPF/CNPJ, placa de veículo)
-- [ ] Em relação a validação de dados sensíveis Como os documentos CPF CNPJ E a placa do veículo Devem ser validados utilizando bibliotecas para validação de CPF/CNPJ e placa de veículo, garantindo que os dados inseridos estejam no formato correto e sejam válidos.
+- [x] Em relação a validação de dados sensíveis Como os documentos CPF CNPJ E a placa do veículo Devem ser validados utilizando bibliotecas para validação de CPF/CNPJ e placa de veículo, garantindo que os dados inseridos estejam no formato correto e sejam válidos.
 - [x] Testes unitários para os principais fluxos
 - [x] Testes de integração para os principais fluxos
 - [x] Cobertura mínima de 80% nos domínios críticos

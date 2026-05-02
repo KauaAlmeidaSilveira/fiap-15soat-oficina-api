@@ -88,7 +88,7 @@ class VeiculoControllerIT {
     void deveVincularClienteEListar() throws Exception {
         // Cria cliente
         ClienteRequest clienteReq = new ClienteRequest(
-                "Carlos Pereira", "11122233344",
+                "Carlos Pereira", "97035031448",
                 TipoDocumento.CPF, null, null, null);
         MvcResult clienteResult = mockMvc.perform(post("/api/clientes")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -120,7 +120,7 @@ class VeiculoControllerIT {
     @DisplayName("Deve retornar 422 ao vincular cliente já vinculado")
     void deveRetornar422ClienteJaVinculado() throws Exception {
         ClienteRequest clienteReq = new ClienteRequest(
-                "Paulo Salave", "55566677700",
+                "Paulo Salave", "62830947592",
                 TipoDocumento.CPF, null, null, null);
         MvcResult clienteResult = mockMvc.perform(post("/api/clientes")
                         .contentType(MediaType.APPLICATION_JSON)

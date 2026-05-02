@@ -1,6 +1,7 @@
 package br.com.fiap.oficina.dto.request;
 
 import br.com.fiap.oficina.domain.enums.TipoDocumento;
+import br.com.fiap.oficina.validation.CpfOuCnpj;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -14,7 +15,7 @@ public record ClienteRequest(
     String nome,
 
     @NotBlank(message = "CPF/CNPJ é obrigatório")
-    @Pattern(regexp = "^(\\d{11}|\\d{14})$", message = "CPF deve ter 11 dígitos ou CNPJ 14 dígitos (somente números)")
+    @CpfOuCnpj
     String cpfCnpj,
 
     @NotNull(message = "Tipo de documento é obrigatório")

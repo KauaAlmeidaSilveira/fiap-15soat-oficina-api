@@ -42,7 +42,7 @@ class OrdemServicoControllerIT {
 
     @BeforeEach
     void criarDadosBase() throws Exception {
-        ClienteRequest clienteReq = new ClienteRequest("Ana Lima", "55566677788",
+        ClienteRequest clienteReq = new ClienteRequest("Ana Lima", "71498053297",
                 TipoDocumento.CPF, null, null, null);
         MvcResult clienteResult = mockMvc.perform(post("/api/clientes")
                         .contentType(MediaType.APPLICATION_JSON)
