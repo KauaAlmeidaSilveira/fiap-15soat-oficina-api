@@ -44,7 +44,7 @@
 - [x] docker-compose.yml para orquestrar ambiente completo
 - [x] Cobertura de testes mínima de 80% nos domínios críticos
 - [x] README.md completo com instruções de uso
-- [ ] Repositório privado com acesso ao usuário `soat-architecture`
+- [x] Repositório privado com acesso ao usuário `soat-architecture`
 
 ## Entregáveis da Fase 1
 - [ ] Revisar mensagens salvas no discord para garantir que os requisitos foram atendidos
@@ -59,6 +59,8 @@
   - [x] Dockerfile e docker-compose configurados
   - [x] README.md completo com instruções de uso e objetivos
 - [ ] Relatório com análise de vulnerabilidades (scan do código)
+  - [ ] SonarQube — prints da análise local (community edition, sem exportação)
+  - [ ] OWASP ZAP — relatório exportado da API em execução (HTML ou PDF)
 - [ ] Documento de entrega (PDF) contendo:
   - [ ] Nome do grupo
   - [ ] Participantes e usernames no Discord

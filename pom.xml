@@ -21,6 +21,10 @@
         <java.version>21</java.version>
         <springdoc.version>2.5.0</springdoc.version>
         <mapstruct.version>1.5.5.Final</mapstruct.version>
+        <sonar.coverage.exclusions>
+            **/config/DataLoader.java,
+            **/OficinaApplication.java
+        </sonar.coverage.exclusions>
     </properties>
 
     <dependencies>
@@ -137,6 +141,12 @@
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <version>0.8.11</version>
+                <configuration>
+                    <excludes>
+                        <exclude>**/config/DataLoader.class</exclude>
+                        <exclude>**/OficinaApplication.class</exclude>
+                    </excludes>
+                </configuration>
                 <executions>
                     <execution>
                         <goals><goal>prepare-agent</goal></goals>
