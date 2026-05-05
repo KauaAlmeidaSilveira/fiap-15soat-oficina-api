@@ -12,6 +12,7 @@ import br.com.fiap.oficina.domain.model.Veiculo;
 import br.com.fiap.oficina.domain.repository.ClienteRepository;
 import br.com.fiap.oficina.domain.repository.MovimentacaoEstoqueRepository;
 import br.com.fiap.oficina.domain.repository.OrdemServicoRepository;
+import br.com.fiap.oficina.domain.repository.OsItemRepository;
 import br.com.fiap.oficina.domain.repository.ProdutoRepository;
 import br.com.fiap.oficina.domain.repository.VeiculoRepository;
 import br.com.fiap.oficina.dto.request.OrdemServicoRequest;
@@ -38,6 +39,7 @@ public class OrdemServicoService {
     private final EntityManager entityManager;
 
     private final OrdemServicoRepository osRepository;
+    private final OsItemRepository osItemRepository;
     private final ClienteRepository clienteRepository;
     private final VeiculoRepository veiculoRepository;
     private final ProdutoRepository produtoRepository;
@@ -188,6 +190,42 @@ public class OrdemServicoService {
                 .build();
         entityManager.persist(item);
         os.getItens().add(item);
+        os.setValorTotal(calcularTotal(os.getItens()));
+
+        if (os.getDataAprovacao() != null && TipoProduto.PECA.equals(produto.getTipo())) {
+            MovimentacaoEstoque saida = MovimentacaoEstoque.builder()
+                    .produto(produto)
+                    .tipo(TipoMovimentacao.SAIDA)
+                    .quantidade(item.getQuantidade())
+                    .motivo("Saída automática - adição de item pós-aprovação da OS " + os.getNumero())
+                    .ordemServico(os)
+                    .build();
+            movimentacaoEstoqueRepository.save(saida);
+            produtoService.sincronizarSaldo(produto.getId());
+        }
+
+        return toResponse(osRepository.save(os));
+    }
+
+    @Transactional
+    public OrdemServicoResponse removerItem(Long osId, Long itemId) {
+        OrdemServico os = findById(osId);
+        OsItem item = osItemRepository.findByIdAndOrdemServicoId(itemId, osId)
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Item não encontrado na OS informada"));
+
+        if (os.getDataAprovacao() != null && TipoProduto.PECA.equals(item.getProduto().getTipo())) {
+            MovimentacaoEstoque estorno = MovimentacaoEstoque.builder()
+                    .produto(item.getProduto())
+                    .tipo(TipoMovimentacao.ENTRADA)
+                    .quantidade(item.getQuantidade())
+                    .motivo("Estorno por remoção de item da OS " + os.getNumero())
+                    .ordemServico(os)
+                    .build();
+            movimentacaoEstoqueRepository.save(estorno);
+            produtoService.sincronizarSaldo(item.getProduto().getId());
+        }
+
+        os.getItens().remove(item);
         os.setValorTotal(calcularTotal(os.getItens()));
         return toResponse(osRepository.save(os));
     }

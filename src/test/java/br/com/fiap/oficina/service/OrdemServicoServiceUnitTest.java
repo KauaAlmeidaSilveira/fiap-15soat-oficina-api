@@ -7,9 +7,13 @@ import br.com.fiap.oficina.domain.model.Cliente;
 import br.com.fiap.oficina.domain.model.OrdemServico;
 import br.com.fiap.oficina.domain.model.Produto;
 import br.com.fiap.oficina.domain.model.Veiculo;
+import br.com.fiap.oficina.domain.enums.TipoMovimentacao;
+import br.com.fiap.oficina.domain.model.MovimentacaoEstoque;
+import br.com.fiap.oficina.domain.model.OsItem;
 import br.com.fiap.oficina.domain.repository.ClienteRepository;
 import br.com.fiap.oficina.domain.repository.MovimentacaoEstoqueRepository;
 import br.com.fiap.oficina.domain.repository.OrdemServicoRepository;
+import br.com.fiap.oficina.domain.repository.OsItemRepository;
 import br.com.fiap.oficina.domain.repository.ProdutoRepository;
 import br.com.fiap.oficina.domain.repository.VeiculoRepository;
 import br.com.fiap.oficina.dto.request.OrdemServicoRequest;
@@ -33,6 +37,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -40,6 +45,7 @@ import static org.mockito.Mockito.when;
 class OrdemServicoServiceUnitTest {
 
     @Mock OrdemServicoRepository osRepository;
+    @Mock OsItemRepository osItemRepository;
     @Mock ClienteRepository clienteRepository;
     @Mock VeiculoRepository veiculoRepository;
     @Mock ProdutoRepository produtoRepository;
@@ -173,6 +179,45 @@ class OrdemServicoServiceUnitTest {
     }
 
     @Test
+    @DisplayName("Deve registrar SAIDA ao adicionar PECA em OS já aprovada")
+    void deveRegistrarSaidaAoAdicionarPecaEmOSAprovada() {
+        os.setDataAprovacao(LocalDateTime.now());
+        OrdemServicoRequest.OsItemRequest itemReq = new OrdemServicoRequest.OsItemRequest(1L, 3, null, null);
+
+        when(osRepository.findById(1L)).thenReturn(Optional.of(os));
+        when(produtoRepository.findById(1L)).thenReturn(Optional.of(peca));
+        when(movimentacaoEstoqueRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(osRepository.save(any())).thenReturn(os);
+        when(clienteService.toResponse(any())).thenCallRealMethod();
+        when(veiculoService.toResponse(any())).thenCallRealMethod();
+
+        osService.adicionarItem(1L, itemReq);
+
+        verify(movimentacaoEstoqueRepository).save(any(MovimentacaoEstoque.class));
+        verify(produtoService).sincronizarSaldo(peca.getId());
+    }
+
+    @Test
+    @DisplayName("Deve adicionar SERVICO em OS aprovada sem afetar estoque")
+    void deveAdicionarServicoEmOSAprovadaSemAfetarEstoque() {
+        Produto servico = Produto.builder().id(2L).nome("Balanceamento")
+                .tipo(TipoProduto.SERVICO).precoUnitario(new BigDecimal("60.00")).ativo(true).build();
+        os.setDataAprovacao(LocalDateTime.now());
+        OrdemServicoRequest.OsItemRequest itemReq = new OrdemServicoRequest.OsItemRequest(2L, 1, null, null);
+
+        when(osRepository.findById(1L)).thenReturn(Optional.of(os));
+        when(produtoRepository.findById(2L)).thenReturn(Optional.of(servico));
+        when(osRepository.save(any())).thenReturn(os);
+        when(clienteService.toResponse(any())).thenCallRealMethod();
+        when(veiculoService.toResponse(any())).thenCallRealMethod();
+
+        osService.adicionarItem(1L, itemReq);
+
+        verify(movimentacaoEstoqueRepository, never()).save(any());
+        verify(produtoService, never()).sincronizarSaldo(any());
+    }
+
+    @Test
     @DisplayName("Deve lançar exceção ao adicionar item em OS finalizada")
     void deveLancarExcecaoAdicionarItemOSFinalizada() {
         os.setStatus(StatusOS.FINALIZADA);
@@ -197,5 +242,115 @@ class OrdemServicoServiceUnitTest {
 
         assertThat(lista).hasSize(1);
         assertThat(lista.get(0).status()).isEqualTo(StatusOS.RECEBIDA);
+    }
+
+    @Test
+    @DisplayName("Deve remover item de OS não aprovada sem afetar estoque")
+    void deveRemoverItemDeOSNaoAprovada() {
+        OsItem item = OsItem.builder().id(10L).produto(peca)
+                .quantidade(2).precoUnitario(new BigDecimal("50.00")).build();
+        os.getItens().add(item);
+        os.setValorTotal(new BigDecimal("100.00"));
+
+        when(osRepository.findById(1L)).thenReturn(Optional.of(os));
+        when(osItemRepository.findByIdAndOrdemServicoId(10L, 1L)).thenReturn(Optional.of(item));
+        when(osRepository.save(any())).thenReturn(os);
+        when(clienteService.toResponse(any())).thenCallRealMethod();
+        when(veiculoService.toResponse(any())).thenCallRealMethod();
+
+        osService.removerItem(1L, 10L);
+
+        assertThat(os.getItens()).isEmpty();
+        assertThat(os.getValorTotal()).isEqualByComparingTo(BigDecimal.ZERO);
+        verify(movimentacaoEstoqueRepository, never()).save(any());
+        verify(produtoService, never()).sincronizarSaldo(any());
+    }
+
+    @Test
+    @DisplayName("Deve remover item de OS aprovada com PECA e estornar estoque")
+    void deveRemoverItemDeOSAprovadaComPecaEstornaEstoque() {
+        os.setDataAprovacao(LocalDateTime.now());
+        OsItem item = OsItem.builder().id(10L).produto(peca)
+                .quantidade(3).precoUnitario(new BigDecimal("50.00")).build();
+        os.getItens().add(item);
+
+        when(osRepository.findById(1L)).thenReturn(Optional.of(os));
+        when(osItemRepository.findByIdAndOrdemServicoId(10L, 1L)).thenReturn(Optional.of(item));
+        when(movimentacaoEstoqueRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(osRepository.save(any())).thenReturn(os);
+        when(clienteService.toResponse(any())).thenCallRealMethod();
+        when(veiculoService.toResponse(any())).thenCallRealMethod();
+
+        osService.removerItem(1L, 10L);
+
+        assertThat(os.getItens()).isEmpty();
+        verify(movimentacaoEstoqueRepository).save(any(MovimentacaoEstoque.class));
+        verify(produtoService).sincronizarSaldo(peca.getId());
+    }
+
+    @Test
+    @DisplayName("Deve remover item de OS aprovada com SERVICO sem afetar estoque")
+    void deveRemoverItemDeOSAprovadaComServicoNaoAfetaEstoque() {
+        Produto servico = Produto.builder().id(2L).nome("Alinhamento")
+                .tipo(TipoProduto.SERVICO).precoUnitario(new BigDecimal("80.00")).ativo(true).build();
+        os.setDataAprovacao(LocalDateTime.now());
+        OsItem item = OsItem.builder().id(11L).produto(servico)
+                .quantidade(1).precoUnitario(new BigDecimal("80.00")).build();
+        os.getItens().add(item);
+
+        when(osRepository.findById(1L)).thenReturn(Optional.of(os));
+        when(osItemRepository.findByIdAndOrdemServicoId(11L, 1L)).thenReturn(Optional.of(item));
+        when(osRepository.save(any())).thenReturn(os);
+        when(clienteService.toResponse(any())).thenCallRealMethod();
+        when(veiculoService.toResponse(any())).thenCallRealMethod();
+
+        osService.removerItem(1L, 11L);
+
+        assertThat(os.getItens()).isEmpty();
+        verify(movimentacaoEstoqueRepository, never()).save(any());
+        verify(produtoService, never()).sincronizarSaldo(any());
+    }
+
+    @Test
+    @DisplayName("Deve lançar exceção ao remover item que não pertence à OS")
+    void deveLancarExcecaoAoRemoverItemNaoEncontradoNaOS() {
+        when(osRepository.findById(1L)).thenReturn(Optional.of(os));
+        when(osItemRepository.findByIdAndOrdemServicoId(99L, 1L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> osService.removerItem(1L, 99L))
+                .isInstanceOf(RecursoNaoEncontradoException.class);
+    }
+
+    @Test
+    @DisplayName("Ciclo completo: adiciona PECA pós-aprovação (SAIDA) e depois remove (ENTRADA) — duas movimentações, resultado líquido zero")
+    void deveRegistrarSaidaEEntradaAoCicloAdicionarRemoverPecaAposAprovacao() {
+        os.setDataAprovacao(LocalDateTime.now());
+        OrdemServicoRequest.OsItemRequest itemReq = new OrdemServicoRequest.OsItemRequest(1L, 2, null, null);
+
+        // — passo 1: adicionar item pós-aprovação
+        when(osRepository.findById(1L)).thenReturn(Optional.of(os));
+        when(produtoRepository.findById(1L)).thenReturn(Optional.of(peca));
+        when(movimentacaoEstoqueRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(osRepository.save(any())).thenReturn(os);
+        when(clienteService.toResponse(any())).thenCallRealMethod();
+        when(veiculoService.toResponse(any())).thenCallRealMethod();
+
+        osService.adicionarItem(1L, itemReq);
+
+        assertThat(os.getItens()).hasSize(1);
+        verify(movimentacaoEstoqueRepository).save(any(MovimentacaoEstoque.class)); // SAIDA
+
+        OsItem itemAdicionado = os.getItens().get(0);
+
+        // — passo 2: remover o mesmo item
+        when(osItemRepository.findByIdAndOrdemServicoId(itemAdicionado.getId(), 1L))
+                .thenReturn(Optional.of(itemAdicionado));
+
+        osService.removerItem(1L, itemAdicionado.getId());
+
+        assertThat(os.getItens()).isEmpty();
+        // duas chamadas ao save de movimentação: uma SAIDA + uma ENTRADA
+        verify(movimentacaoEstoqueRepository, org.mockito.Mockito.times(2)).save(any(MovimentacaoEstoque.class));
+        verify(produtoService, org.mockito.Mockito.times(2)).sincronizarSaldo(peca.getId());
     }
 }
