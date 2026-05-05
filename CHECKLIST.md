@@ -58,12 +58,15 @@
   - [x] APIs conforme requisitos
   - [x] Dockerfile e docker-compose configurados
   - [x] README.md completo com instruções de uso e objetivos
-- [ ] Relatório com análise de vulnerabilidades (scan do código)
-  - [ ] SonarQube — prints da análise local (community edition, sem exportação)
-  - [ ] OWASP ZAP — relatório exportado da API em execução (HTML ou PDF)
+- [x] Relatório com análise de vulnerabilidades (scan do código)
+  - [x] SonarQube — prints da análise local (community edition, sem exportação)
+  - [x] OWASP ZAP — relatório exportado da API em execução (HTML ou PDF)
 - [ ] Documento de entrega (PDF) contendo:
-  - [ ] Nome do grupo
-  - [ ] Participantes e usernames no Discord
-  - [ ] Link da documentação DDD
-  - [ ] Link do repositório
-  - [ ] Relatório com análise de vulnerabilidades
+  - [x] Rascunho em TXT criado (documento-entrega.txt na raiz de Challenge - Fase 1)
+  - [x] Nome do grupo preenchido (confirmar número do grupo antes de entregar)
+  - [x] Participantes e usernames no Discord preenchidos
+  - [ ] Link da documentação DDD (a preencher após criar o Miro)
+  - [x] Link do repositório preenchido
+  - [x] Relatório com análise de vulnerabilidades (resumo SonarQube + OWASP ZAP com detalhamento dos alertas)
+  - [ ] Colar prints do SonarQube e ZAP no documento final
+  - [ ] Converter TXT para PDF
