@@ -32,6 +32,7 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
 
@@ -191,6 +192,38 @@ public class DataLoader {
                     .user(admin)
                     .build();
             osRepo.save(os3);
+
+            // OS 4 - Finalizada com datas para alimentar a métrica de tempo médio
+            LocalDateTime inicio4 = LocalDateTime.now().minusDays(2);
+            LocalDateTime fim4 = inicio4.plusHours(3).plusMinutes(30);
+            OrdemServico os4 = OrdemServico.builder()
+                    .cliente(joao).veiculo(corolla)
+                    .numero("OS" + (System.currentTimeMillis() + 2))
+                    .status(StatusOS.FINALIZADA)
+                    .descricaoProblema("Troca de correia dentada e revisão geral")
+                    .dataInicio(inicio4)
+                    .dataFim(fim4)
+                    .user(admin)
+                    .build();
+            BigDecimal totalOs4 = BigDecimal.valueOf(200.00);
+            os4.setValorTotal(totalOs4);
+            osRepo.save(os4);
+
+            // OS 5 - Entregue com datas para enriquecer a métrica de tempo médio
+            LocalDateTime inicio5 = LocalDateTime.now().minusDays(5);
+            LocalDateTime fim5 = inicio5.plusHours(1).plusMinutes(45);
+            OrdemServico os5 = OrdemServico.builder()
+                    .cliente(maria).veiculo(hb20)
+                    .numero("OS" + (System.currentTimeMillis() + 3))
+                    .status(StatusOS.ENTREGUE)
+                    .descricaoProblema("Alinhamento, balanceamento e troca de pastilhas")
+                    .dataInicio(inicio5)
+                    .dataFim(fim5)
+                    .user(admin)
+                    .build();
+            BigDecimal totalOs5 = BigDecimal.valueOf(270.00);
+            os5.setValorTotal(totalOs5);
+            osRepo.save(os5);
 
             log.info("=== Dados carregados com sucesso ===");
             log.info("Clientes: {}", clienteRepo.count());
