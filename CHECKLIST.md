@@ -31,7 +31,8 @@
 ### Segurança e qualidade
 - [x] Implementação de autenticação JWT para APIs administrativas
 - [x] Validação dos dados sensíveis (CPF/CNPJ, placa de veículo)
-- [x] Em relação a validação de dados sensíveis Como os documentos CPF CNPJ E a placa do veículo Devem ser validados utilizando bibliotecas para validação de CPF/CNPJ e placa de veículo, garantindo que os dados inseridos estejam no formato correto e sejam válidos.
+  - CPF/CNPJ: validação semântica via Hibernate Validator BR (`@CpfOuCnpj` custom, verifica dígitos verificadores)
+  - Placa: `@Pattern` cobre formato antigo (`ABC1234`) e Mercosul (`ABC1D23`)
 - [x] Testes unitários para os principais fluxos
 - [x] Testes de integração para os principais fluxos
 - [x] Cobertura mínima de 80% nos domínios críticos

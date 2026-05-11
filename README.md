@@ -7,7 +7,7 @@
 
 ## Sobre o Projeto
 
-Sistema back-end para uma oficina mecânica de médio porte, com gestão completa de ordens de serviço, clientes, veículos, peças, serviços e controle de estoque.
+Sistema back-end para uma oficina mecânica de médio porte, com gestão completa de ordens de serviço, clientes, veículos, peças, serviços e controle de estoque. Todos os endpoints administrativos são protegidos por autenticação JWT (RSA-2048) com controle de acesso por role.
 
 ### Decisão de banco de dados
 
@@ -19,12 +19,6 @@ O projeto utiliza **dois perfis**:
 | `default` (Docker/produção) | PostgreSQL 16 | Ambiente containerizado via `docker-compose` |
 
 A troca é transparente: basta definir `SPRING_PROFILES_ACTIVE` na variável de ambiente. O Hibernate gera o DDL automaticamente em ambos os casos.
-
----
-
-## ⚠️ Versão MVP — Sem autenticação
-
-Nesta fase todos os endpoints são **públicos** (sem JWT). A autenticação será implementada em fase futura.
 
 ---
 
@@ -43,8 +37,9 @@ br.com.fiap.oficina
 ├── dto/
 │   ├── request/         # Records de entrada com validação (@Valid)
 │   └── response/        # Records de saída
+├── validation/          # Validadores customizados (CPF/CNPJ)
 ├── handler/             # GlobalExceptionHandler + exceções de domínio
-└── config/              # CorsConfig, SwaggerConfig, DataLoader
+└── config/              # SecurityConfig, CorsConfig, SwaggerConfig, DataLoader
 ```
 
 ### Entidades do domínio
@@ -68,26 +63,59 @@ RECEBIDA → EM_DIAGNOSTICO → AGUARDANDO_APROVACAO → EM_EXECUCAO → FINALIZ
 
 ---
 
+## Segurança
+
+Todos os endpoints exigem **JWT Bearer token**, exceto:
+- `POST /api/auth/login`
+- Swagger UI (`/swagger-ui.html`, `/v3/api-docs/**`)
+- H2 Console (`/h2-console/**`) — somente perfil `dev`
+
+### Roles
+
+| Role | Descrição |
+|------|-----------|
+| `ADMIN` | Acesso total |
+| `OPERADOR` | Mecânico — executa OS, gerencia produtos/estoque |
+| `RECEPCAO` | Atendente — cadastra clientes, veículos e abre OS |
+
+### Usuários carregados pelo DataLoader
+
+| Username | Senha | Role |
+|----------|-------|------|
+| `kaua@gmail.com` | `Admin@123` | ADMIN |
+| `recepcao@oficina.com` | `Recepcao@123` | RECEPCAO |
+| `operador@oficina.com` | `Operador@123` | OPERADOR |
+
+---
+
 ## Como executar
 
 ### Pré-requisitos
+
 - Java 21+
 - Maven 3.9+
 - Docker e Docker Compose (para execução em container)
 
+### Gerar as chaves JWT (obrigatório antes de rodar)
+
+```bash
+openssl genrsa -out src/main/resources/jwt.private.key 2048
+openssl rsa -in src/main/resources/jwt.private.key \
+    -pubout -out src/main/resources/jwt.public.key
+```
+
+> As chaves não estão no repositório (`.gitignore`). Devem ser geradas localmente antes de qualquer execução.
+
 ### Execução local (perfil `dev` com H2)
 
 ```bash
-# 1. Clone o repositório
 git clone <url-do-repositorio>
-cd oficina
+cd fiap-15soat-oficina-api
 
-# 2. Execute com Maven
-mvn spring-boot:run
-
-# A aplicação sobe em: http://localhost:8080
-# Perfil ativo: dev (H2 in-memory)
+mvn spring-boot:run -Dspring-boot.run.profiles=dev
 ```
+
+A aplicação sobe em `http://localhost:8080` com banco H2 in-memory.
 
 ### Execução com Docker (PostgreSQL)
 
@@ -95,19 +123,17 @@ mvn spring-boot:run
 docker-compose up --build
 ```
 
-O `docker-compose` sobe dois containers: **postgres** (PostgreSQL 16) e **oficina-api** (Spring Boot). A API aguarda o banco estar saudável antes de iniciar.
+Sobe dois containers: **postgres** (PostgreSQL 16) e **oficina-api** (Spring Boot). A API aguarda o banco estar saudável antes de iniciar.
 
 ---
 
 ## Documentação da API (Swagger)
 
-Após subir a aplicação, acesse:
-
 ```
 http://localhost:8080/swagger-ui.html
 ```
 
-A documentação completa de todos os endpoints está disponível via OpenAPI 3 (`/v3/api-docs`).
+Documentação completa de todos os endpoints via OpenAPI 3 (`/v3/api-docs`).
 
 ---
 
@@ -153,68 +179,99 @@ Cobertura mínima exigida pelo gate do JaCoCo: **80%**.
 | `*ServiceTest` | Testes unitários com Mockito |
 | `*ControllerIT` | Testes de integração com `@SpringBootTest` + MockMvc |
 | `Ordem/OsItem/SaldoEstoqueTest` | Testes de domínio |
-| `GlobalExceptionHandlerTest` | Testes do handler de erros |
+| `GlobalExceptionHandlerTest` | Testes do exception handler |
 
 ---
 
 ## Endpoints
 
+### Autenticação — `/api/auth`
+
+| Método | Endpoint | Autenticação | Descrição |
+|--------|----------|-------------|-----------|
+| POST | `/api/auth/login` | Pública | Autentica e retorna JWT |
+| POST | `/api/auth/register` | ADMIN | Cadastra novo usuário (role OPERADOR) |
+
+**Login — exemplo:**
+```json
+// Request
+{ "username": "kaua@gmail.com", "password": "Admin@123" }
+
+// Response
+{ "token": "<JWT>", "expiresIn": 28800 }
+```
+
+Usar o token retornado no header de todas as demais requisições:
+```
+Authorization: Bearer <token>
+```
+
+---
+
 ### Clientes — `/api/clientes`
 
-| Método | Endpoint | Descrição |
-|--------|----------|-----------|
-| POST | `/api/clientes` | Cadastrar cliente |
-| GET | `/api/clientes` | Listar todos |
-| GET | `/api/clientes/{id}` | Buscar por ID |
-| GET | `/api/clientes/cpf-cnpj/{cpfCnpj}` | Buscar por CPF/CNPJ |
-| PUT | `/api/clientes/{id}` | Atualizar |
-| DELETE | `/api/clientes/{id}` | Deletar |
+| Método | Endpoint | Roles | Descrição |
+|--------|----------|-------|-----------|
+| POST | `/api/clientes` | ADMIN, RECEPCAO | Cadastrar cliente |
+| GET | `/api/clientes` | Autenticado | Listar todos |
+| GET | `/api/clientes/{id}` | Autenticado | Buscar por ID |
+| GET | `/api/clientes/cpf-cnpj/{cpfCnpj}` | Autenticado | Buscar por CPF/CNPJ |
+| PUT | `/api/clientes/{id}` | ADMIN, RECEPCAO | Atualizar |
+| DELETE | `/api/clientes/{id}` | ADMIN, RECEPCAO | Deletar |
+
+---
 
 ### Veículos — `/api/veiculos`
 
-| Método | Endpoint | Descrição |
-|--------|----------|-----------|
-| POST | `/api/veiculos` | Cadastrar veículo |
-| GET | `/api/veiculos` | Listar todos |
-| GET | `/api/veiculos/{id}` | Buscar por ID |
-| GET | `/api/veiculos/placa/{placa}` | Buscar por placa |
-| PUT | `/api/veiculos/{id}` | Atualizar |
-| DELETE | `/api/veiculos/{id}` | Deletar |
-| POST | `/api/veiculos/{veiculoId}/clientes/{clienteId}` | Vincular cliente ao veículo |
-| GET | `/api/veiculos/cliente/{clienteId}` | Listar veículos de um cliente |
+| Método | Endpoint | Roles | Descrição |
+|--------|----------|-------|-----------|
+| POST | `/api/veiculos` | ADMIN, RECEPCAO | Cadastrar veículo |
+| GET | `/api/veiculos` | Autenticado | Listar todos |
+| GET | `/api/veiculos/{id}` | Autenticado | Buscar por ID |
+| GET | `/api/veiculos/placa/{placa}` | Autenticado | Buscar por placa |
+| GET | `/api/veiculos/cliente/{clienteId}` | Autenticado | Listar veículos de um cliente |
+| PUT | `/api/veiculos/{id}` | ADMIN, RECEPCAO | Atualizar |
+| DELETE | `/api/veiculos/{id}` | ADMIN, RECEPCAO | Deletar |
+| POST | `/api/veiculos/{veiculoId}/clientes/{clienteId}` | ADMIN, RECEPCAO | Vincular cliente ao veículo |
+
+---
 
 ### Ordens de Serviço — `/api/ordens-servico`
 
-| Método | Endpoint | Descrição |
-|--------|----------|-----------|
-| POST | `/api/ordens-servico` | Criar OS |
-| GET | `/api/ordens-servico` | Listar todas (filtro opcional: `?status=` ou `?clienteId=`) |
-| GET | `/api/ordens-servico/{id}` | Detalhar OS |
-| GET | `/api/ordens-servico/numero/{numero}` | Consulta pública por número (cliente) |
-| PATCH | `/api/ordens-servico/{id}/avancar-status` | Avançar status da OS |
-| PATCH | `/api/ordens-servico/{id}/aprovar` | Cliente aprova orçamento |
-| POST | `/api/ordens-servico/{id}/itens` | Adicionar item à OS |
-| GET | `/api/ordens-servico/metricas/tempo-medio` | Tempo médio de execução (horas) |
+| Método | Endpoint | Roles | Descrição |
+|--------|----------|-------|-----------|
+| POST | `/api/ordens-servico` | ADMIN, RECEPCAO | Criar OS |
+| GET | `/api/ordens-servico` | Autenticado | Listar todas (`?status=` / `?clienteId=`) |
+| GET | `/api/ordens-servico/{id}` | Autenticado | Detalhar OS |
+| GET | `/api/ordens-servico/numero/{numero}` | Autenticado | Buscar por número |
+| PATCH | `/api/ordens-servico/{id}/avancar-status` | ADMIN, OPERADOR | Avançar status da OS |
+| PATCH | `/api/ordens-servico/{id}/aprovar` | ADMIN, OPERADOR | Aprovar orçamento |
+| POST | `/api/ordens-servico/{id}/itens` | ADMIN, OPERADOR | Adicionar item à OS |
+| DELETE | `/api/ordens-servico/{id}/itens/{itemId}` | ADMIN, OPERADOR | Remover item da OS |
+| GET | `/api/ordens-servico/metricas/tempo-medio` | Autenticado | Tempo médio de execução (horas) |
+
+---
 
 ### Produtos e Estoque — `/api/produtos`
 
-| Método | Endpoint | Descrição |
-|--------|----------|-----------|
-| POST | `/api/produtos` | Cadastrar produto (peça ou serviço) |
-| GET | `/api/produtos` | Listar todos (filtro opcional: `?tipo=PECA` ou `?tipo=SERVICO`) |
-| GET | `/api/produtos/{id}` | Buscar por ID |
-| PUT | `/api/produtos/{id}` | Atualizar produto |
-| DELETE | `/api/produtos/{id}` | Inativar produto |
-| POST | `/api/produtos/estoque/movimentacao` | Registrar entrada ou saída de estoque |
-| GET | `/api/produtos/{id}/estoque/movimentacoes` | Histórico de movimentações de um produto |
-| GET | `/api/produtos/estoque/movimentacoes` | Histórico de todas as movimentações |
+| Método | Endpoint | Roles | Descrição |
+|--------|----------|-------|-----------|
+| POST | `/api/produtos` | OPERADOR | Cadastrar produto (peça ou serviço) |
+| GET | `/api/produtos` | Autenticado | Listar todos (`?tipo=PECA` / `?tipo=SERVICO`) |
+| GET | `/api/produtos/{id}` | Autenticado | Buscar por ID |
+| PUT | `/api/produtos/{id}` | OPERADOR | Atualizar produto |
+| DELETE | `/api/produtos/{id}` | OPERADOR | Inativar produto |
+| POST | `/api/produtos/estoque/entrada` | ADMIN, OPERADOR | Registrar entrada de estoque |
+| POST | `/api/produtos/estoque/saida` | ADMIN | Registrar saída manual de estoque |
+| GET | `/api/produtos/{id}/estoque/movimentacoes` | Autenticado | Histórico de movimentações de um produto |
+| GET | `/api/produtos/estoque/movimentacoes` | Autenticado | Histórico de todas as movimentações |
 
 ---
 
 ## Estrutura do projeto
 
 ```
-oficina/
+fiap-15soat-oficina-api/
 ├── src/
 │   ├── main/
 │   │   ├── java/br/com/fiap/oficina/
@@ -223,10 +280,10 @@ oficina/
 │   │       └── application-dev.properties    # Perfil dev (H2)
 │   └── test/
 │       └── java/br/com/fiap/oficina/
-│           ├── api/        # Testes de integração (*IT)
-│           ├── application/# Testes unitários de serviço
-│           ├── domain/     # Testes de domínio
-│           └── handler/    # Testes do exception handler
+│           ├── controller/   # Testes de integração (*ControllerIT)
+│           ├── service/      # Testes unitários de serviço (*ServiceTest)
+│           ├── domain/       # Testes de domínio
+│           └── handler/      # Testes do exception handler
 ├── Dockerfile
 ├── docker-compose.yml
 ├── pom.xml
@@ -239,12 +296,12 @@ oficina/
 |------------|--------|-----|
 | Java | 21 | Linguagem |
 | Spring Boot | 3.2.5 | Framework principal |
+| Spring Security + OAuth2 Resource Server | — | Autenticação JWT |
 | Spring Data JPA | — | Persistência |
-| Spring Validation | — | Validação de DTOs |
+| Spring Validation + Hibernate Validator BR | — | Validação de DTOs e CPF/CNPJ |
 | PostgreSQL | 16 | Banco em produção |
 | H2 | — | Banco em desenvolvimento/testes |
 | springdoc-openapi | 2.5.0 | Swagger UI / OpenAPI 3 |
 | Lombok | — | Redução de boilerplate |
-| MapStruct | 1.5.5 | Mapeamento de DTOs |
 | JaCoCo | 0.8.11 | Cobertura de testes |
 | JUnit 5 + Mockito | — | Testes |
