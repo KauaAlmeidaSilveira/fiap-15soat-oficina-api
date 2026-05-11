@@ -2,6 +2,7 @@ package br.com.fiap.oficina.controller;
 
 import br.com.fiap.oficina.domain.enums.TipoDocumento;
 import br.com.fiap.oficina.domain.enums.TipoProduto;
+import br.com.fiap.oficina.dto.request.AprovarOsRequest;
 import br.com.fiap.oficina.dto.request.ClienteRequest;
 import br.com.fiap.oficina.dto.request.MovimentacaoEstoqueRequest;
 import br.com.fiap.oficina.dto.request.OrdemServicoRequest;
@@ -86,7 +87,9 @@ class OrdemServicoControllerIT {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("AGUARDANDO_APROVACAO"));
 
-        mockMvc.perform(patch("/api/ordens-servico/" + osId + "/aprovar"))
+        mockMvc.perform(patch("/api/ordens-servico/" + osId + "/aprovar")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new AprovarOsRequest(true))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("EM_EXECUCAO"));
 
@@ -218,7 +221,9 @@ class OrdemServicoControllerIT {
     @WithMockUser(roles = "RECEPCAO")
     @DisplayName("Deve retornar 403 ao aprovar OS sem role OPERADOR")
     void deveRetornar403AoAprovarSemPermissao() throws Exception {
-        mockMvc.perform(patch("/api/ordens-servico/99999/aprovar"))
+        mockMvc.perform(patch("/api/ordens-servico/99999/aprovar")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new AprovarOsRequest(true))))
                 .andExpect(status().isForbidden());
     }
 
@@ -248,7 +253,10 @@ class OrdemServicoControllerIT {
 
         mockMvc.perform(patch("/api/ordens-servico/" + osId + "/avancar-status")).andExpect(status().isOk());
         mockMvc.perform(patch("/api/ordens-servico/" + osId + "/avancar-status")).andExpect(status().isOk());
-        mockMvc.perform(patch("/api/ordens-servico/" + osId + "/aprovar")).andExpect(status().isOk());
+        mockMvc.perform(patch("/api/ordens-servico/" + osId + "/aprovar")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new AprovarOsRequest(true))))
+                .andExpect(status().isOk());
 
         // saldo ainda = 10, nenhuma peça na OS ainda
         mockMvc.perform(get("/api/produtos/" + produtoId))
@@ -327,7 +335,10 @@ class OrdemServicoControllerIT {
         // avança até AGUARDANDO_APROVACAO e aprova (gera SAIDA de estoque)
         mockMvc.perform(patch("/api/ordens-servico/" + osId + "/avancar-status")).andExpect(status().isOk());
         mockMvc.perform(patch("/api/ordens-servico/" + osId + "/avancar-status")).andExpect(status().isOk());
-        mockMvc.perform(patch("/api/ordens-servico/" + osId + "/aprovar")).andExpect(status().isOk());
+        mockMvc.perform(patch("/api/ordens-servico/" + osId + "/aprovar")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new AprovarOsRequest(true))))
+                .andExpect(status().isOk());
 
         // remove o item — deve estornar as 2 unidades de volta ao estoque
         mockMvc.perform(delete("/api/ordens-servico/" + osId + "/itens/" + itemId))
@@ -389,7 +400,10 @@ class OrdemServicoControllerIT {
 
         mockMvc.perform(patch("/api/ordens-servico/" + osId + "/avancar-status")).andExpect(status().isOk());
         mockMvc.perform(patch("/api/ordens-servico/" + osId + "/avancar-status")).andExpect(status().isOk());
-        mockMvc.perform(patch("/api/ordens-servico/" + osId + "/aprovar")).andExpect(status().isOk());
+        mockMvc.perform(patch("/api/ordens-servico/" + osId + "/aprovar")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new AprovarOsRequest(true))))
+                .andExpect(status().isOk());
 
         // saldo inicial intacto (nenhum item na OS durante aprovação)
         mockMvc.perform(get("/api/produtos/" + produtoId))

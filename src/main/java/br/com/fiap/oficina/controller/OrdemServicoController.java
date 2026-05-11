@@ -1,6 +1,7 @@
 package br.com.fiap.oficina.controller;
 
 import br.com.fiap.oficina.domain.enums.StatusOS;
+import br.com.fiap.oficina.dto.request.AprovarOsRequest;
 import br.com.fiap.oficina.dto.request.OrdemServicoRequest;
 import br.com.fiap.oficina.dto.response.OrdemServicoResponse;
 import br.com.fiap.oficina.service.OrdemServicoService;
@@ -70,9 +71,11 @@ public class OrdemServicoController {
 
     @PatchMapping("/{id}/aprovar")
     @PreAuthorize("hasAnyRole('ADMIN', 'OPERADOR')")
-    @Operation(summary = "Cliente aprova o orçamento da OS")
-    public ResponseEntity<OrdemServicoResponse> aprovar(@PathVariable Long id) {
-        return ResponseEntity.ok(osService.aprovar(id));
+    @Operation(summary = "Registra a decisão do cliente sobre o orçamento (aprovado: true = aprovado, false = reprovado)")
+    public ResponseEntity<OrdemServicoResponse> aprovar(
+            @PathVariable Long id,
+            @Valid @RequestBody AprovarOsRequest request) {
+        return ResponseEntity.ok(osService.aprovar(id, request));
     }
 
     @PostMapping("/{id}/itens")

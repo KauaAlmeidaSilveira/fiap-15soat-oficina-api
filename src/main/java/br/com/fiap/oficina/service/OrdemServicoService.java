@@ -15,6 +15,7 @@ import br.com.fiap.oficina.domain.repository.OrdemServicoRepository;
 import br.com.fiap.oficina.domain.repository.OsItemRepository;
 import br.com.fiap.oficina.domain.repository.ProdutoRepository;
 import br.com.fiap.oficina.domain.repository.VeiculoRepository;
+import br.com.fiap.oficina.dto.request.AprovarOsRequest;
 import br.com.fiap.oficina.dto.request.OrdemServicoRequest;
 import br.com.fiap.oficina.dto.response.ClienteResponse;
 import br.com.fiap.oficina.dto.response.OrdemServicoResponse;
@@ -124,6 +125,7 @@ public class OrdemServicoService {
             case EM_EXECUCAO -> StatusOS.FINALIZADA;
             case FINALIZADA -> StatusOS.ENTREGUE;
             case ENTREGUE -> throw new RegraDeNegocioException("OS já foi entregue ao cliente.");
+            case REPROVADA -> throw new RegraDeNegocioException("OS reprovada não pode ter o status avançado.");
         };
         os.setStatus(novoStatus);
 
@@ -143,15 +145,19 @@ public class OrdemServicoService {
     }
 
     @Transactional
-    public OrdemServicoResponse aprovar(Long id) {
+    public OrdemServicoResponse aprovar(Long id, AprovarOsRequest request) {
         OrdemServico os = findById(id);
         if (os.getStatus() != StatusOS.AGUARDANDO_APROVACAO) {
-            throw new RegraDeNegocioException("A OS precisa estar com status AGUARDANDO_APROVACAO para ser aprovada.");
+            throw new RegraDeNegocioException("A OS precisa estar com status AGUARDANDO_APROVACAO para ser aprovada ou reprovada.");
         }
-        os.setDataAprovacao(LocalDateTime.now());
-        os.setStatus(StatusOS.EM_EXECUCAO);
-        os.setDataInicio(LocalDateTime.now());
-        registrarSaidasEstoque(os);
+        if (request.aprovado()) {
+            os.setDataAprovacao(LocalDateTime.now());
+            os.setStatus(StatusOS.EM_EXECUCAO);
+            os.setDataInicio(LocalDateTime.now());
+            registrarSaidasEstoque(os);
+        } else {
+            os.setStatus(StatusOS.REPROVADA);
+        }
         return toResponse(osRepository.save(os));
     }
 
@@ -176,8 +182,9 @@ public class OrdemServicoService {
     public OrdemServicoResponse adicionarItem(Long osId, OrdemServicoRequest.OsItemRequest itemReq) {
         OrdemServico os = findById(osId);
         if (os.getStatus() == StatusOS.FINALIZADA ||
-            os.getStatus() == StatusOS.ENTREGUE) {
-            throw new RegraDeNegocioException("Não é possível adicionar itens a uma OS finalizada ou entregue.");
+            os.getStatus() == StatusOS.ENTREGUE ||
+            os.getStatus() == StatusOS.REPROVADA) {
+            throw new RegraDeNegocioException("Não é possível adicionar itens a uma OS finalizada, entregue ou reprovada.");
         }
         Produto produto = produtoRepository.findById(itemReq.produtoId())
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Produto", itemReq.produtoId()));

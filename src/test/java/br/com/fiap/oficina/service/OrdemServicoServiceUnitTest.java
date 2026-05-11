@@ -16,6 +16,7 @@ import br.com.fiap.oficina.domain.repository.OrdemServicoRepository;
 import br.com.fiap.oficina.domain.repository.OsItemRepository;
 import br.com.fiap.oficina.domain.repository.ProdutoRepository;
 import br.com.fiap.oficina.domain.repository.VeiculoRepository;
+import br.com.fiap.oficina.dto.request.AprovarOsRequest;
 import br.com.fiap.oficina.dto.request.OrdemServicoRequest;
 import br.com.fiap.oficina.dto.response.OrdemServicoResponse;
 import br.com.fiap.oficina.handler.exception.RecursoNaoEncontradoException;
@@ -144,7 +145,7 @@ class OrdemServicoServiceUnitTest {
         when(clienteService.toResponse(any())).thenCallRealMethod();
         when(veiculoService.toResponse(any())).thenCallRealMethod();
 
-        OrdemServicoResponse response = osService.aprovar(1L);
+        OrdemServicoResponse response = osService.aprovar(1L, new AprovarOsRequest(true));
 
         assertThat(response.status()).isEqualTo(StatusOS.EM_EXECUCAO);
         assertThat(os.getDataAprovacao()).isNotNull();
@@ -156,7 +157,7 @@ class OrdemServicoServiceUnitTest {
     void deveLancarExcecaoAprovarStatusErrado() {
         when(osRepository.findById(1L)).thenReturn(Optional.of(os));
 
-        assertThatThrownBy(() -> osService.aprovar(1L))
+        assertThatThrownBy(() -> osService.aprovar(1L, new AprovarOsRequest(true)))
                 .isInstanceOf(RegraDeNegocioException.class)
                 .hasMessageContaining("AGUARDANDO_APROVACAO");
     }
