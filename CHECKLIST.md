@@ -48,13 +48,12 @@
 - [x] Repositório privado com acesso ao usuário `soat-architecture`
 
 ## Entregáveis da Fase 1
-- [ ] Revisar mensagens salvas no discord para garantir que os requisitos foram atendidos
-- [ ] Vídeo de até 15 minutos demonstrando todos os pontos
-- [ ] Documentação DDD (Miro ou equivalente)
-  - [ ] Event Storming — fluxo de criação e acompanhamento da OS
-  - [ ] Event Storming — gestão de peças e insumos
-  - [ ] Diagramas conforme disciplina de DDD
-  - [ ] Linguagem Ubíqua aplicada
+- [x] Revisar mensagens salvas no discord para garantir que os requisitos foram atendidos
+- [] Vídeo de até 15 minutos demonstrando todos os pontos
+- [x] Documentação DDD (Miro ou equivalente)
+  - [x] Event Storming — fluxo de criação e acompanhamento da OS 
+  - [x] Event Storming — gestão de peças e insumos
+  - [x] Linguagem Ubíqua aplicada
 - [x] Código-fonte no repositório
   - [x] APIs conforme requisitos
   - [x] Dockerfile e docker-compose configurados
@@ -62,12 +61,12 @@
 - [x] Relatório com análise de vulnerabilidades (scan do código)
   - [x] SonarQube — prints da análise local (community edition, sem exportação)
   - [x] OWASP ZAP — relatório exportado da API em execução (HTML ou PDF)
-- [ ] Documento de entrega (PDF) contendo:
+- [x] Documento de entrega (PDF) contendo:
   - [x] Rascunho em TXT criado (documento-entrega.txt na raiz de Challenge - Fase 1)
   - [x] Nome do grupo preenchido (confirmar número do grupo antes de entregar)
   - [x] Participantes e usernames no Discord preenchidos
-  - [ ] Link da documentação DDD (a preencher após criar o Miro)
+  - [x] Link da documentação DDD (a preencher após criar o Miro)
   - [x] Link do repositório preenchido
   - [x] Relatório com análise de vulnerabilidades (resumo SonarQube + OWASP ZAP com detalhamento dos alertas)
-  - [ ] Colar prints do SonarQube e ZAP no documento final
-  - [ ] Converter TXT para PDF
+  - [x] Colar prints do SonarQube e ZAP no documento final
+  - [x] Converter TXT para PDF
