@@ -31,11 +31,22 @@ import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
 public class OrdemServicoService {
+
+    private static final List<StatusOS> STATUS_EXCLUIDOS_LISTAGEM = List.of(
+            StatusOS.FINALIZADA, StatusOS.ENTREGUE, StatusOS.REPROVADA);
+
+    private static final Map<StatusOS, Integer> PRIORIDADE_LISTAGEM = Map.of(
+            StatusOS.EM_EXECUCAO, 1,
+            StatusOS.AGUARDANDO_APROVACAO, 2,
+            StatusOS.EM_DIAGNOSTICO, 3,
+            StatusOS.RECEBIDA, 4);
 
     private final EntityManager entityManager;
 
@@ -101,7 +112,12 @@ public class OrdemServicoService {
 
     @Transactional(readOnly = true)
     public List<OrdemServicoResponse> listarTodas() {
-        return osRepository.findAll().stream().map(this::toResponse).toList();
+        return osRepository.findByStatusNotIn(STATUS_EXCLUIDOS_LISTAGEM).stream()
+                .sorted(Comparator
+                        .comparing((OrdemServico os) -> PRIORIDADE_LISTAGEM.get(os.getStatus()))
+                        .thenComparing(OrdemServico::getCriadoEm))
+                .map(this::toResponse)
+                .toList();
     }
 
     @Transactional(readOnly = true)

@@ -41,7 +41,11 @@ public class OrdemServicoController {
     }
 
     @GetMapping
-    @Operation(summary = "Listar todas as OS")
+    @Operation(summary = "Listar OS. Sem filtros: retorna apenas as OS ativas " +
+            "(oculta Finalizada, Entregue e Reprovada), ordenadas por status " +
+            "(Em Execução > Aguardando Aprovação > Diagnóstico > Recebida) e, dentro do mesmo " +
+            "status, mais antigas primeiro. Com '?status=' ou '?clienteId=' retorna o filtro " +
+            "explícito, incluindo status finalizados.")
     public ResponseEntity<List<OrdemServicoResponse>> listar(
             @RequestParam(required = false) StatusOS status,
             @RequestParam(required = false) Long clienteId) {

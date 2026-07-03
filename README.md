@@ -241,7 +241,7 @@ Authorization: Bearer <token>
 | Método | Endpoint | Roles | Descrição |
 |--------|----------|-------|-----------|
 | POST | `/api/ordens-servico` | ADMIN, RECEPCAO | Criar OS |
-| GET | `/api/ordens-servico` | Autenticado | Listar todas (`?status=` / `?clienteId=`) |
+| GET | `/api/ordens-servico` | Autenticado | Sem filtro: lista apenas OS ativas (oculta Finalizada/Entregue/Reprovada), ordenadas por status (Em Execução > Aguardando Aprovação > Diagnóstico > Recebida) e, dentro do mesmo status, mais antigas primeiro. Com `?status=` retorna qualquer status (inclusive finalizados). Com `?clienteId=` retorna o histórico completo do cliente. |
 | GET | `/api/ordens-servico/{id}` | Autenticado | Detalhar OS |
 | GET | `/api/ordens-servico/numero/{numero}` | Autenticado | Buscar por número |
 | PATCH | `/api/ordens-servico/{id}/avancar-status` | ADMIN, OPERADOR | Avançar status da OS |

@@ -233,6 +233,63 @@ class OrdemServicoServiceUnitTest {
     }
 
     @Test
+    @DisplayName("Deve listar apenas OS ativas, ordenadas por status e depois por mais antiga primeiro")
+    void deveListarTodasOrdenadaEExcluindoFinalizadas() {
+        LocalDateTime agora = LocalDateTime.now();
+
+        OrdemServico recebidaAntiga = OrdemServico.builder().id(1L).numero("OS1")
+                .cliente(cliente).veiculo(veiculo).status(StatusOS.RECEBIDA)
+                .valorTotal(BigDecimal.ZERO).criadoEm(agora.minusHours(3)).build();
+        OrdemServico recebidaNova = OrdemServico.builder().id(2L).numero("OS2")
+                .cliente(cliente).veiculo(veiculo).status(StatusOS.RECEBIDA)
+                .valorTotal(BigDecimal.ZERO).criadoEm(agora.minusHours(1)).build();
+        OrdemServico emDiagnostico = OrdemServico.builder().id(3L).numero("OS3")
+                .cliente(cliente).veiculo(veiculo).status(StatusOS.EM_DIAGNOSTICO)
+                .valorTotal(BigDecimal.ZERO).criadoEm(agora.minusHours(2)).build();
+        OrdemServico aguardandoAprovacao = OrdemServico.builder().id(4L).numero("OS4")
+                .cliente(cliente).veiculo(veiculo).status(StatusOS.AGUARDANDO_APROVACAO)
+                .valorTotal(BigDecimal.ZERO).criadoEm(agora.minusHours(4)).build();
+        OrdemServico emExecucao = OrdemServico.builder().id(5L).numero("OS5")
+                .cliente(cliente).veiculo(veiculo).status(StatusOS.EM_EXECUCAO)
+                .valorTotal(BigDecimal.ZERO).criadoEm(agora.minusHours(5)).build();
+
+        // não devem aparecer na listagem padrão
+        OrdemServico finalizada = OrdemServico.builder().id(6L).numero("OS6")
+                .cliente(cliente).veiculo(veiculo).status(StatusOS.FINALIZADA)
+                .valorTotal(BigDecimal.ZERO).criadoEm(agora.minusHours(10)).build();
+        OrdemServico entregue = OrdemServico.builder().id(7L).numero("OS7")
+                .cliente(cliente).veiculo(veiculo).status(StatusOS.ENTREGUE)
+                .valorTotal(BigDecimal.ZERO).criadoEm(agora.minusHours(11)).build();
+        OrdemServico reprovada = OrdemServico.builder().id(8L).numero("OS8")
+                .cliente(cliente).veiculo(veiculo).status(StatusOS.REPROVADA)
+                .valorTotal(BigDecimal.ZERO).criadoEm(agora.minusHours(12)).build();
+
+        when(osRepository.findByStatusNotIn(List.of(StatusOS.FINALIZADA, StatusOS.ENTREGUE, StatusOS.REPROVADA)))
+                .thenReturn(List.of(recebidaAntiga, recebidaNova, emDiagnostico, aguardandoAprovacao, emExecucao));
+        when(clienteService.toResponse(any())).thenCallRealMethod();
+        when(veiculoService.toResponse(any())).thenCallRealMethod();
+
+        List<OrdemServicoResponse> lista = osService.listarTodas();
+
+        assertThat(lista).hasSize(5);
+        assertThat(lista.stream().map(OrdemServicoResponse::numero))
+                .containsExactly("OS5", "OS4", "OS3", "OS1", "OS2");
+        assertThat(lista.stream().map(OrdemServicoResponse::status))
+                .doesNotContain(StatusOS.FINALIZADA, StatusOS.ENTREGUE, StatusOS.REPROVADA);
+    }
+
+    @Test
+    @DisplayName("Deve retornar lista vazia quando todas as OS estão finalizadas, entregues ou reprovadas")
+    void deveRetornarListaVaziaQuandoTodasExcluidas() {
+        when(osRepository.findByStatusNotIn(List.of(StatusOS.FINALIZADA, StatusOS.ENTREGUE, StatusOS.REPROVADA)))
+                .thenReturn(List.of());
+
+        List<OrdemServicoResponse> lista = osService.listarTodas();
+
+        assertThat(lista).isEmpty();
+    }
+
+    @Test
     @DisplayName("Deve listar OS por status")
     void deveListarPorStatus() {
         when(osRepository.findByStatus(StatusOS.RECEBIDA)).thenReturn(List.of(os));

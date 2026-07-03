@@ -8,6 +8,7 @@ import br.com.fiap.oficina.dto.request.MovimentacaoEstoqueRequest;
 import br.com.fiap.oficina.dto.request.OrdemServicoRequest;
 import br.com.fiap.oficina.dto.request.ProdutoRequest;
 import br.com.fiap.oficina.dto.request.VeiculoRequest;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -22,8 +23,10 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
@@ -171,6 +174,79 @@ class OrdemServicoControllerIT {
     @DisplayName("Deve listar OS por cliente")
     void deveListarPorCliente() throws Exception {
         mockMvc.perform(get("/api/ordens-servico?clienteId=" + clienteId))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("Listagem padrão deve ordenar por status e ocultar finalizadas/entregues/reprovadas")
+    void deveListarComOrdenacaoPorStatusEOcultarFinalizadasEntreguesReprovadas() throws Exception {
+        Long idRecebida = criarOS("Revisão de rotina");
+
+        Long idDiagnostico = criarOS("Barulho no motor");
+        avancarStatus(idDiagnostico);
+
+        Long idAguardando = criarOS("Troca de embreagem");
+        avancarStatus(idAguardando);
+        avancarStatus(idAguardando);
+
+        Long idExecucao = criarOS("Suspensão dianteira");
+        avancarStatus(idExecucao);
+        avancarStatus(idExecucao);
+        aprovar(idExecucao, true);
+
+        Long idFinalizada = criarOS("Troca de óleo");
+        avancarStatus(idFinalizada);
+        avancarStatus(idFinalizada);
+        aprovar(idFinalizada, true);
+        avancarStatus(idFinalizada);
+
+        Long idReprovada = criarOS("Pintura completa");
+        avancarStatus(idReprovada);
+        avancarStatus(idReprovada);
+        aprovar(idReprovada, false);
+
+        MvcResult result = mockMvc.perform(get("/api/ordens-servico"))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        List<Long> idsRetornados = new ArrayList<>();
+        for (JsonNode node : objectMapper.readTree(result.getResponse().getContentAsString())) {
+            idsRetornados.add(node.get("id").asLong());
+        }
+
+        assertThat(idsRetornados)
+                .containsExactly(idExecucao, idAguardando, idDiagnostico, idRecebida);
+        assertThat(idsRetornados).doesNotContain(idFinalizada, idReprovada);
+
+        // filtro explícito por status continua funcionando mesmo para status ocultos na listagem padrão
+        mockMvc.perform(get("/api/ordens-servico?status=FINALIZADA"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id").value(idFinalizada));
+        mockMvc.perform(get("/api/ordens-servico?status=REPROVADA"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id").value(idReprovada));
+    }
+
+    private Long criarOS(String descricaoProblema) throws Exception {
+        OrdemServicoRequest osRequest = new OrdemServicoRequest(
+                clienteId, veiculoId, descricaoProblema, null, null);
+        MvcResult result = mockMvc.perform(post("/api/ordens-servico")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(osRequest)))
+                .andExpect(status().isCreated())
+                .andReturn();
+        return objectMapper.readTree(result.getResponse().getContentAsString()).get("id").asLong();
+    }
+
+    private void avancarStatus(Long osId) throws Exception {
+        mockMvc.perform(patch("/api/ordens-servico/" + osId + "/avancar-status"))
+                .andExpect(status().isOk());
+    }
+
+    private void aprovar(Long osId, boolean aprovado) throws Exception {
+        mockMvc.perform(patch("/api/ordens-servico/" + osId + "/aprovar")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new AprovarOsRequest(aprovado))))
                 .andExpect(status().isOk());
     }
 
