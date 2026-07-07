@@ -133,6 +133,12 @@ O banco de dados não roda no cluster — é uma instância RDS externa provisio
 Instruções completas (geração do Secret com as chaves JWT, pré-requisitos de metrics-server/IAM,
 ordem de aplicação dos manifestos) em [`k8s/README.md`](k8s/README.md).
 
+### Provisionamento da infraestrutura (Terraform — AWS)
+
+Scripts em [`infra/`](infra/) provisionam o cluster EKS, o RDS PostgreSQL e o repositório ECR usados
+pelo deploy em Kubernetes acima. Detalhes de recursos criados, custos, pré-requisitos e o passo a
+passo de `terraform apply`/`destroy` em [`infra/README.md`](infra/README.md).
+
 ---
 
 ## Documentação da API (Swagger)
@@ -293,6 +299,7 @@ fiap-15soat-oficina-api/
 │           ├── domain/       # Testes de domínio
 │           └── handler/      # Testes do exception handler
 ├── k8s/                       # Manifestos Kubernetes (deploy no EKS) — ver k8s/README.md
+├── infra/                     # Terraform (EKS + RDS + ECR na AWS) — ver infra/README.md
 ├── Dockerfile
 ├── docker-compose.yml
 ├── pom.xml

@@ -43,3 +43,12 @@ src/main/resources/jwt.public.key
 # Kubernetes Secret real - nunca versionar (contem senha de DB e chaves JWT)
 # Use k8s/secret.yaml.example como template e gere o real conforme k8s/README.md
 k8s/secret.yaml
+
+# Terraform - estado local, cache de providers e variaveis com segredos
+# Use infra/terraform.tfvars.example como template
+# (.terraform.lock.hcl NAO entra aqui - deve ser commitado para builds reprodutiveis)
+infra/.terraform/
+infra/terraform.tfvars
+infra/*.tfstate
+infra/*.tfstate.backup
+infra/crash.log

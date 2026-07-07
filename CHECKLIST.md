@@ -35,10 +35,13 @@
 - [x] Testado fim-a-fim em cluster real (Docker Desktop Kubernetes, kubeadm, nó único): imagem buildada localmente + Postgres local temporário substituindo os placeholders de RDS/ECR só para o teste. Login, listagem de OS e HPA validados; HPA escalou de 1→2 réplicas sob carga real (`SuccessfulRescale`) e o mesmo token JWT foi aceito nas duas réplicas (20/20 requisições 200, sem 401), confirmando que o Secret compartilhado resolve o problema de chaves por-pod. Recursos de teste removidos do cluster ao final.
 
 ### Infraestrutura como Código (IaC) — AWS
-- [ ] Terraform: cluster EKS
-- [ ] Terraform: banco de dados RDS (PostgreSQL)
-- [ ] Terraform: recursos de rede/suporte (VPC, subnets, security groups, IAM necessários ao EKS/RDS)
-- [ ] Documentação dos recursos criados e de como aplicar (`/infra/README.md`)
+- [x] Terraform: cluster EKS — `infra/eks.tf` (módulo oficial, node group gerenciado, role dos nodes já com policy de leitura no ECR)
+- [x] Terraform: banco de dados RDS (PostgreSQL) — `infra/rds.tf` (single-AZ, não publicamente acessível, security group restrito aos nodes do EKS)
+- [x] Terraform: recursos de rede/suporte (VPC, subnets, security groups) — `infra/vpc.tf` (módulo oficial, subnets públicas/privadas, NAT gateway único para reduzir custo)
+- [x] Terraform: repositório ECR — `infra/ecr.tf` (scan de vulnerabilidade on push, lifecycle policy)
+- [x] Documentação dos recursos criados e de como aplicar — `infra/README.md` (inclui aviso de custo e passo a passo de `destroy`)
+- [x] `terraform init` + `terraform validate` rodados localmente com sucesso (sem aplicar — exigiria credenciais AWS reais e geraria custo; apply/destroy ficam a cargo do usuário)
+- [ ] Rodar `terraform apply` de verdade contra uma conta AWS (fora do escopo deste ambiente — precisa das credenciais reais do aluno)
 
 ### CI/CD
 - [ ] Pipeline configurada (GitHub Actions)
@@ -55,7 +58,7 @@
 - [ ] Código-fonte atualizado e refatorado em Clean Architecture
 - [ ] Dockerfile e docker-compose revisados
 - [x] Manifestos Kubernetes em `/k8s`
-- [ ] Scripts Terraform em `/infra`
+- [x] Scripts Terraform em `/infra`
 - [ ] Arquivos de configuração da pipeline CI/CD (`.github/workflows`)
 
 ### README.md atualizado
@@ -66,7 +69,7 @@
   - [ ] Fluxo de deploy (CI/CD → Docker → Terraform → K8s)
 - [x] Instruções de execução local (já existiam da Fase 1)
 - [x] Instruções de deploy em Kubernetes (seção adicionada, linka `k8s/README.md`)
-- [ ] Instruções de provisionamento da infraestrutura com Terraform
+- [x] Instruções de provisionamento da infraestrutura com Terraform (seção adicionada, linka `infra/README.md`)
 - [ ] Link para a collection completa das APIs (Postman já existe em `Challenge - Fase 1/postman/` — atualizar e linkar)
 - [ ] Link para vídeo demonstrativo (YouTube/Vimeo, público ou não listado, até 15 min) demonstrando:
   - [ ] Deploy da aplicação
