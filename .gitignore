@@ -39,3 +39,7 @@ target/
 # Gere localmente com os comandos no README
 src/main/resources/jwt.private.key
 src/main/resources/jwt.public.key
+
+# Kubernetes Secret real - nunca versionar (contem senha de DB e chaves JWT)
+# Use k8s/secret.yaml.example como template e gere o real conforme k8s/README.md
+k8s/secret.yaml

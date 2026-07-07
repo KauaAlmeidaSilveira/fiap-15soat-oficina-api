@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: oficina-api-config
+  namespace: oficina
+data:
+  SPRING_PROFILES_ACTIVE: "default"
+  # Substituir pelo endpoint real do RDS provisionado na fase de Terraform (/infra).
+  DB_HOST: "<RDS_ENDPOINT>"
+  # Paths de leitura das chaves montadas via Secret (jwt-keys) em /app/keys — não são segredo em si,
+  # apenas o caminho do arquivo; o conteúdo sensível vem do volume montado a partir do Secret.
+  JWT_PUBLIC_KEY: "file:/app/keys/jwt.public.key"
+  JWT_PRIVATE_KEY: "file:/app/keys/jwt.private.key"

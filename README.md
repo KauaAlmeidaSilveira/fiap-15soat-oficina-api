@@ -125,6 +125,14 @@ docker-compose up --build
 
 Sobe dois containers: **postgres** (PostgreSQL 16) e **oficina-api** (Spring Boot). A API aguarda o banco estar saudável antes de iniciar.
 
+### Deploy em Kubernetes (produção — AWS EKS)
+
+Manifestos em [`k8s/`](k8s/): `Deployment`, `Service` (LoadBalancer), `ConfigMap`, `Secret` e `HorizontalPodAutoscaler`.
+O banco de dados não roda no cluster — é uma instância RDS externa provisionada via Terraform (`/infra`).
+
+Instruções completas (geração do Secret com as chaves JWT, pré-requisitos de metrics-server/IAM,
+ordem de aplicação dos manifestos) em [`k8s/README.md`](k8s/README.md).
+
 ---
 
 ## Documentação da API (Swagger)
@@ -284,6 +292,7 @@ fiap-15soat-oficina-api/
 │           ├── service/      # Testes unitários de serviço (*ServiceTest)
 │           ├── domain/       # Testes de domínio
 │           └── handler/      # Testes do exception handler
+├── k8s/                       # Manifestos Kubernetes (deploy no EKS) — ver k8s/README.md
 ├── Dockerfile
 ├── docker-compose.yml
 ├── pom.xml
