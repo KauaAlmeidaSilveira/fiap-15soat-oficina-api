@@ -139,6 +139,27 @@ Scripts em [`infra/`](infra/) provisionam o cluster EKS, o RDS PostgreSQL e o re
 pelo deploy em Kubernetes acima. Detalhes de recursos criados, custos, pré-requisitos e o passo a
 passo de `terraform apply`/`destroy` em [`infra/README.md`](infra/README.md).
 
+### CI/CD (GitHub Actions)
+
+Pipeline em [`.github/workflows/ci-cd.yml`](.github/workflows/ci-cd.yml), com 3 jobs:
+
+1. **build-and-test** (todo push/PR) — gera as chaves JWT (necessárias só para os testes), roda `mvn verify` (build + testes + gate de cobertura JaCoCo) e publica o relatório de testes como artefato.
+2. **build-and-push-image** (só em push) — autentica na AWS, faz login no ECR e builda/publica a imagem Docker com duas tags: o SHA curto do commit e `latest`.
+3. **deploy** (só em push) — aponta o `kubectl` para o cluster EKS, confirma que o RDS está disponível (o schema em si é gerenciado pelo Hibernate via `ddl-auto=update` no boot da aplicação — não há migration tool dedicado), cria/atualiza o Secret da aplicação a partir dos secrets do GitHub, substitui os placeholders `<RDS_ENDPOINT>`/`<ECR_URI>` nos manifestos e aplica tudo em `/k8s`.
+
+Pré-requisito: os recursos do Terraform (`/infra`) já precisam existir (EKS, RDS, ECR criados via `terraform apply`) antes desse pipeline rodar com sucesso — ele não provisiona infraestrutura, só builda/testa/publica/faz deploy.
+
+**Secrets a configurar no repositório GitHub** (Settings → Secrets and variables → Actions):
+
+| Secret | Valor | De onde vem |
+|---|---|---|
+| `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` | Credenciais de um usuário/role IAM com permissão de ECR, EKS e RDS | Console/IAM da AWS |
+| `EKS_CLUSTER_NAME` | Nome do cluster | `terraform output eks_cluster_name` |
+| `ECR_REPOSITORY_URL` | URI do repositório de imagens | `terraform output ecr_repository_url` |
+| `RDS_ENDPOINT` | Endpoint do banco | `terraform output rds_endpoint` |
+| `DB_PASSWORD` | Mesma senha usada no `terraform.tfvars` | Definida por você |
+| `JWT_PRIVATE_KEY` / `JWT_PUBLIC_KEY` | Conteúdo (PEM) do par de chaves RSA — o mesmo par para todas as réplicas, ver [`k8s/README.md`](k8s/README.md) | Gerado uma vez via `openssl` |
+
 ---
 
 ## Documentação da API (Swagger)

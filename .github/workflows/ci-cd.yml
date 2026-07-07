@@ -1,0 +1,126 @@
+name: CI/CD
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+env:
+  AWS_REGION: us-east-1
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+
+      # Chaves JWT sao gitignoradas (nunca versionadas) - geradas aqui so para
+      # os testes de integracao rodarem, igual e feito em qualquer ambiente local.
+      - name: Gerar chaves JWT para os testes
+        run: |
+          openssl genrsa -out src/main/resources/jwt.private.key 2048
+          openssl rsa -in src/main/resources/jwt.private.key -pubout -out src/main/resources/jwt.public.key
+
+      - name: Build + testes + gate de cobertura (JaCoCo)
+        run: mvn -B verify
+
+      - name: Publicar relatorio de testes
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: target/surefire-reports/
+
+  build-and-push-image:
+    needs: build-and-test
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    outputs:
+      image_tag: ${{ steps.vars.outputs.image_tag }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Definir tag da imagem
+        id: vars
+        run: echo "image_tag=${GITHUB_SHA::12}" >> "$GITHUB_OUTPUT"
+
+      - name: Configurar credenciais AWS
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login no ECR
+        id: ecr-login
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build e push da imagem Docker
+        env:
+          REPO: ${{ secrets.ECR_REPOSITORY_URL }}
+          TAG: ${{ steps.vars.outputs.image_tag }}
+        run: |
+          docker build -t "$REPO:$TAG" -t "$REPO:latest" .
+          docker push "$REPO:$TAG"
+          docker push "$REPO:latest"
+
+  deploy:
+    needs: build-and-push-image
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configurar credenciais AWS
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Configurar kubectl para o cluster EKS
+        run: aws eks update-kubeconfig --name "${{ secrets.EKS_CLUSTER_NAME }}" --region "${{ env.AWS_REGION }}"
+
+      - name: Deploy do banco de dados (verifica RDS disponível)
+        run: |
+          echo "Schema gerenciado automaticamente pelo Hibernate (ddl-auto=update) no boot da aplicação - sem migration tool dedicado."
+          aws rds wait db-instance-available --db-instance-identifier oficina-db
+          aws rds describe-db-instances --db-instance-identifier oficina-db \
+            --query 'DBInstances[0].DBInstanceStatus' --output text
+
+      - name: Aplicar namespace
+        run: kubectl apply -f k8s/namespace.yaml
+
+      - name: Criar/atualizar Secret da aplicação
+        run: |
+          kubectl create secret generic oficina-api-secrets \
+            --namespace oficina \
+            --from-literal=DB_PASSWORD="${{ secrets.DB_PASSWORD }}" \
+            --from-literal=jwt.private.key="${{ secrets.JWT_PRIVATE_KEY }}" \
+            --from-literal=jwt.public.key="${{ secrets.JWT_PUBLIC_KEY }}" \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Renderizar e aplicar ConfigMap/Deployment/Service/HPA
+        env:
+          RDS_ENDPOINT: ${{ secrets.RDS_ENDPOINT }}
+          ECR_REPOSITORY_URL: ${{ secrets.ECR_REPOSITORY_URL }}
+          IMAGE_TAG: ${{ needs.build-and-push-image.outputs.image_tag }}
+        run: |
+          mkdir -p /tmp/k8s-rendered
+          sed "s|<RDS_ENDPOINT>|$RDS_ENDPOINT|" k8s/configmap.yaml > /tmp/k8s-rendered/configmap.yaml
+          sed "s|\"<ECR_URI>/oficina-api:latest\"|\"$ECR_REPOSITORY_URL:$IMAGE_TAG\"|" k8s/deployment.yaml > /tmp/k8s-rendered/deployment.yaml
+
+          kubectl apply -f /tmp/k8s-rendered/configmap.yaml
+          kubectl apply -f /tmp/k8s-rendered/deployment.yaml
+          kubectl apply -f k8s/service.yaml
+          kubectl apply -f k8s/hpa.yaml
+
+      - name: Aguardar rollout
+        run: kubectl rollout status deployment/oficina-api -n oficina --timeout=180s

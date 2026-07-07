@@ -44,13 +44,16 @@
 - [ ] Rodar `terraform apply` de verdade contra uma conta AWS (fora do escopo deste ambiente — precisa das credenciais reais do aluno)
 
 ### CI/CD
-- [ ] Pipeline configurada (GitHub Actions)
-- [ ] Etapa de build da aplicação
-- [ ] Etapa de execução dos testes automatizados
-- [ ] Etapa de build da imagem Docker
-- [ ] Etapa de deploy no cluster Kubernetes (EKS)
-- [ ] Etapa de deploy/migração do banco de dados (RDS)
-- [ ] Etapa de aplicação dos manifestos YAML no cluster
+- [x] Pipeline configurada (GitHub Actions) — `.github/workflows/ci-cd.yml`, 3 jobs (build-and-test, build-and-push-image, deploy)
+- [x] Etapa de build da aplicação — `mvn verify` no job `build-and-test`
+- [x] Etapa de execução dos testes automatizados — mesmo job, inclui gate de cobertura JaCoCo
+- [x] Etapa de build da imagem Docker — job `build-and-push-image`, tags `<sha>` e `latest`, push pro ECR
+- [x] Etapa de deploy no cluster Kubernetes (EKS) — job `deploy`, `aws eks update-kubeconfig` + `kubectl apply`
+- [x] Etapa de deploy/migração do banco de dados (RDS) — verifica RDS disponível via `aws rds wait db-instance-available`; schema em si é gerenciado pelo Hibernate `ddl-auto=update` no boot (sem Flyway/Liquibase), documentado no README
+- [x] Etapa de aplicação dos manifestos YAML no cluster — substitui placeholders `<RDS_ENDPOINT>`/`<ECR_URI>` via `sed` e aplica `configmap/deployment/service/hpa`
+- [x] Validado com `actionlint` (com `shellcheck` para os blocos `run:`) — 0 problemas encontrados
+- [x] Secrets necessários documentados no `README.md` principal (AWS, ECR, RDS, DB_PASSWORD, chaves JWT)
+- [ ] Nunca executado de verdade (precisa do repositório no GitHub com os secrets configurados e da infraestrutura do Terraform já aplicada)
 
 ## Entregáveis da Fase 2
 
@@ -59,7 +62,7 @@
 - [ ] Dockerfile e docker-compose revisados
 - [x] Manifestos Kubernetes em `/k8s`
 - [x] Scripts Terraform em `/infra`
-- [ ] Arquivos de configuração da pipeline CI/CD (`.github/workflows`)
+- [x] Arquivos de configuração da pipeline CI/CD (`.github/workflows`)
 
 ### README.md atualizado
 - [ ] Descrição da solução e dos objetivos desta fase
