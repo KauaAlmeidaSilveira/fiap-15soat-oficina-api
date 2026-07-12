@@ -81,5 +81,5 @@ variable "db_allocated_storage" {
 variable "db_engine_version" {
   description = "Versão do PostgreSQL no RDS (mesma major version usada em dev/prod: 16)"
   type        = string
-  default     = "16.4"
+  default     = "16.14"
 }

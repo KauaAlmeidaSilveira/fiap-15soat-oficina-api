@@ -49,6 +49,5 @@ k8s/secret.yaml
 # (.terraform.lock.hcl NAO entra aqui - deve ser commitado para builds reprodutiveis)
 infra/.terraform/
 infra/terraform.tfvars
-infra/*.tfstate
-infra/*.tfstate.backup
+infra/terraform.tfstate*
 infra/crash.log

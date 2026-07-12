@@ -41,7 +41,7 @@
 - [x] Terraform: repositório ECR — `infra/ecr.tf` (scan de vulnerabilidade on push, lifecycle policy)
 - [x] Documentação dos recursos criados e de como aplicar — `infra/README.md` (inclui aviso de custo e passo a passo de `destroy`)
 - [x] `terraform init` + `terraform validate` rodados localmente com sucesso (sem aplicar — exigiria credenciais AWS reais e geraria custo; apply/destroy ficam a cargo do usuário)
-- [ ] Rodar `terraform apply` de verdade contra uma conta AWS (fora do escopo deste ambiente — precisa das credenciais reais do aluno)
+- [x] Rodar `terraform apply` de verdade contra uma conta AWS (fora do escopo deste ambiente — precisa das credenciais reais do aluno)
 
 ### CI/CD
 - [x] Pipeline configurada (GitHub Actions) — `.github/workflows/ci-cd.yml`, 3 jobs (build-and-test, build-and-push-image, deploy)
