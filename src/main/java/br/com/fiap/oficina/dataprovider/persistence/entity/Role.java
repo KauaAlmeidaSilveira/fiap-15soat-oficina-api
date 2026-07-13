@@ -1,4 +1,4 @@
-package br.com.fiap.oficina.domain.model;
+package br.com.fiap.oficina.dataprovider.persistence.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

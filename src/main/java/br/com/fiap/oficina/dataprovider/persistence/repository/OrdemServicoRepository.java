@@ -1,7 +1,7 @@
-package br.com.fiap.oficina.domain.repository;
+package br.com.fiap.oficina.dataprovider.persistence.repository;
 
 import br.com.fiap.oficina.core.domain.enums.StatusOS;
-import br.com.fiap.oficina.domain.model.OrdemServico;
+import br.com.fiap.oficina.dataprovider.persistence.entity.OrdemServico;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;

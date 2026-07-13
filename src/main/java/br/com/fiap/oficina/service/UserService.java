@@ -1,7 +1,7 @@
 package br.com.fiap.oficina.service;
 
-import br.com.fiap.oficina.domain.model.User;
-import br.com.fiap.oficina.domain.repository.UserRepository;
+import br.com.fiap.oficina.dataprovider.persistence.entity.User;
+import br.com.fiap.oficina.dataprovider.persistence.repository.UserRepository;
 import br.com.fiap.oficina.dto.request.LoginRequest;
 import br.com.fiap.oficina.core.domain.exception.RecursoNaoEncontradoException;
 import org.springframework.security.crypto.password.PasswordEncoder;

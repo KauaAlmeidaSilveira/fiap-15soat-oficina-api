@@ -1,4 +1,4 @@
-package br.com.fiap.oficina.domain.model;
+package br.com.fiap.oficina.dataprovider.persistence.entity;
 
 import br.com.fiap.oficina.core.domain.enums.StatusOS;
 import jakarta.persistence.CascadeType;

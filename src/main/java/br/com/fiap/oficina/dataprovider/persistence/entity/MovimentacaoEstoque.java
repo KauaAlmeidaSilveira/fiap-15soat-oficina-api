@@ -1,4 +1,4 @@
-package br.com.fiap.oficina.domain.model;
+package br.com.fiap.oficina.dataprovider.persistence.entity;
 
 import br.com.fiap.oficina.core.domain.enums.TipoMovimentacao;
 import jakarta.persistence.Column;

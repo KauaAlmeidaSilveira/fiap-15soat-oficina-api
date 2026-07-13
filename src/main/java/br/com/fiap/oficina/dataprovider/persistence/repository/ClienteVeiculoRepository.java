@@ -1,6 +1,6 @@
-package br.com.fiap.oficina.domain.repository;
+package br.com.fiap.oficina.dataprovider.persistence.repository;
 
-import br.com.fiap.oficina.domain.model.ClienteVeiculo;
+import br.com.fiap.oficina.dataprovider.persistence.entity.ClienteVeiculo;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

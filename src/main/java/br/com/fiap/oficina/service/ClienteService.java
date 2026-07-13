@@ -1,7 +1,7 @@
 package br.com.fiap.oficina.service;
 
-import br.com.fiap.oficina.domain.model.Cliente;
-import br.com.fiap.oficina.domain.repository.ClienteRepository;
+import br.com.fiap.oficina.dataprovider.persistence.entity.Cliente;
+import br.com.fiap.oficina.dataprovider.persistence.repository.ClienteRepository;
 import br.com.fiap.oficina.dto.request.ClienteRequest;
 import br.com.fiap.oficina.dto.response.ClienteResponse;
 import br.com.fiap.oficina.core.domain.exception.RecursoNaoEncontradoException;

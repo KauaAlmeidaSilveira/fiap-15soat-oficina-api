@@ -1,6 +1,6 @@
-package br.com.fiap.oficina.domain.repository;
+package br.com.fiap.oficina.dataprovider.persistence.repository;
 
-import br.com.fiap.oficina.domain.model.Role;
+import br.com.fiap.oficina.dataprovider.persistence.entity.Role;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

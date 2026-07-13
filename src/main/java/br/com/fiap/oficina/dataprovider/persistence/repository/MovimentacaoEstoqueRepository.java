@@ -1,7 +1,7 @@
-package br.com.fiap.oficina.domain.repository;
+package br.com.fiap.oficina.dataprovider.persistence.repository;
 
 import br.com.fiap.oficina.core.domain.enums.TipoMovimentacao;
-import br.com.fiap.oficina.domain.model.MovimentacaoEstoque;
+import br.com.fiap.oficina.dataprovider.persistence.entity.MovimentacaoEstoque;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;

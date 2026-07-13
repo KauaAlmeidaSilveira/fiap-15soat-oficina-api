@@ -1,16 +1,12 @@
-package br.com.fiap.oficina.domain.model;
+package br.com.fiap.oficina.dataprovider.persistence.entity;
 
-import br.com.fiap.oficina.core.domain.enums.TipoProduto;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
-import jakarta.persistence.OneToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
@@ -20,54 +16,48 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
-
 @Entity
-@Table(name = "produto")
+@Table(name = "veiculo")
 @Getter @Setter
 @NoArgsConstructor @AllArgsConstructor
 @Builder
-public class Produto {
+public class Veiculo {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, length = 100)
-    private String nome;
+    @Column(nullable = false, unique = true, length = 8)
+    private String placa;
 
-    @Column(length = 255)
-    private String descricao;
+    @Column(nullable = false, length = 50)
+    private String marca;
 
-    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 80)
+    private String modelo;
+
     @Column(nullable = false)
-    private TipoProduto tipo;
-
-    @Column(nullable = false, precision = 10, scale = 2)
-    private BigDecimal precoUnitario;
+    private Integer ano;
 
     @Column(length = 20)
-    private String unidadeMedida;
+    private String cor;
 
-    @Column(nullable = false)
-
-    @Builder.Default
-    private Boolean ativo = true;
+    @Column(length = 17)
+    private String chassi;
 
     @Column(nullable = false, updatable = false)
     private LocalDateTime criadoEm;
 
     private LocalDateTime atualizadoEm;
 
-    // Somente para PECA
-    @OneToOne(mappedBy = "produto", cascade = CascadeType.ALL, orphanRemoval = true)
-    private SaldoEstoque saldoEstoque;
+    @OneToMany(mappedBy = "veiculo", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ClienteVeiculo> proprietarios;
 
-    @OneToMany(mappedBy = "produto", cascade = CascadeType.ALL)
-    private List<MovimentacaoEstoque> movimentacoes;
+    @OneToMany(mappedBy = "veiculo")
+    private List<OrdemServico> ordensServico;
 
     @PrePersist
     protected void onCreate() {

@@ -1,7 +1,7 @@
 package br.com.fiap.oficina.controller;
 
-import br.com.fiap.oficina.domain.model.Role;
-import br.com.fiap.oficina.domain.repository.RoleRepository;
+import br.com.fiap.oficina.dataprovider.persistence.entity.Role;
+import br.com.fiap.oficina.dataprovider.persistence.repository.RoleRepository;
 import br.com.fiap.oficina.dto.request.LoginRequest;
 import br.com.fiap.oficina.dto.request.RegisterRequest;
 import com.fasterxml.jackson.databind.ObjectMapper;

@@ -1,9 +1,9 @@
 package br.com.fiap.oficina.service;
 
-import br.com.fiap.oficina.domain.model.Role;
-import br.com.fiap.oficina.domain.model.User;
-import br.com.fiap.oficina.domain.repository.RoleRepository;
-import br.com.fiap.oficina.domain.repository.UserRepository;
+import br.com.fiap.oficina.dataprovider.persistence.entity.Role;
+import br.com.fiap.oficina.dataprovider.persistence.entity.User;
+import br.com.fiap.oficina.dataprovider.persistence.repository.RoleRepository;
+import br.com.fiap.oficina.dataprovider.persistence.repository.UserRepository;
 import br.com.fiap.oficina.dto.request.LoginRequest;
 import br.com.fiap.oficina.dto.request.RegisterRequest;
 import br.com.fiap.oficina.dto.response.LoginResponse;

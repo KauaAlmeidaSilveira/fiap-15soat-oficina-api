@@ -1,11 +1,11 @@
 package br.com.fiap.oficina.service;
 
-import br.com.fiap.oficina.domain.model.Cliente;
-import br.com.fiap.oficina.domain.model.ClienteVeiculo;
-import br.com.fiap.oficina.domain.model.Veiculo;
-import br.com.fiap.oficina.domain.repository.ClienteRepository;
-import br.com.fiap.oficina.domain.repository.ClienteVeiculoRepository;
-import br.com.fiap.oficina.domain.repository.VeiculoRepository;
+import br.com.fiap.oficina.dataprovider.persistence.entity.Cliente;
+import br.com.fiap.oficina.dataprovider.persistence.entity.ClienteVeiculo;
+import br.com.fiap.oficina.dataprovider.persistence.entity.Veiculo;
+import br.com.fiap.oficina.dataprovider.persistence.repository.ClienteRepository;
+import br.com.fiap.oficina.dataprovider.persistence.repository.ClienteVeiculoRepository;
+import br.com.fiap.oficina.dataprovider.persistence.repository.VeiculoRepository;
 import br.com.fiap.oficina.dto.request.VeiculoRequest;
 import br.com.fiap.oficina.dto.response.VeiculoResponse;
 import br.com.fiap.oficina.core.domain.exception.RecursoNaoEncontradoException;
