@@ -51,3 +51,7 @@ infra/.terraform/
 infra/terraform.tfvars
 infra/terraform.tfstate*
 infra/crash.log
+
+# Credenciais SMTP locais - nunca versionar
+# Use .env.example como template
+.env

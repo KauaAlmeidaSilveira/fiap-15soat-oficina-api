@@ -32,6 +32,8 @@ services:
       DB_PASSWORD: oficina123
       JWT_PUBLIC_KEY: file:/app/keys/jwt.public.key
       JWT_PRIVATE_KEY: file:/app/keys/jwt.private.key
+      GMAIL_SMTP_USERNAME: ${GMAIL_SMTP_USERNAME:-}
+      GMAIL_SMTP_PASSWORD: ${GMAIL_SMTP_PASSWORD:-}
     depends_on:
       postgres:
         condition: service_healthy
