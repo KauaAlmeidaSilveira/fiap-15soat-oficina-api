@@ -7,7 +7,7 @@
 ### Refatoração
 - [ ] Clean Code (nomes claros, simplicidade, coesão) — revisar durante a refatoração de arquitetura
 - [ ] Clean Architecture (separar em `domain` / `application` (casos de uso) / `infrastructure` (JPA, web, security, email) — hoje o projeto é uma arquitetura em camadas simples (`controller/service/domain/dto`), sem essa separação
-- [x] Testes automatizados (unitários e/ou integração) cobrindo os fluxos críticos — já existem 124 testes (unit + IT), cobertura JaCoCo ≥ 80% (reavaliar após mover pacotes na refatoração)
+- [x] Testes automatizados (unitários e/ou integração) cobrindo os fluxos críticos — 140 testes (unit + IT), cobertura JaCoCo 92,6% (reavaliar após mover pacotes na refatoração)
 
 ### APIs — alterar/criar
 - [x] Abertura de Ordem de Serviço (OS): `POST /api/ordens-servico` recebe cliente/veículo/itens e retorna `numero` único
@@ -17,7 +17,10 @@
   - [x] Ordenação por status: Em Execução > Aguardando Aprovação > Diagnóstico > Recebida
   - [x] Dentro do mesmo status, mais antigas primeiro (`criadoEm` ascendente)
   - [x] Exclusão lógica (não física) das OS finalizadas, entregues e reprovadas da listagem padrão (filtro de query, sem coluna de soft-delete)
-- [ ] Atualização de status da OS via e-mail (notificação de saída ao avançar status, via SMTP do Gmail) — ponto pendente confirmado, nada implementado ainda
+- [x] Atualização de status da OS via e-mail — ao entrar em `AGUARDANDO_APROVACAO`, dispara notificação com link de aprovar/recusar (token JWT assinado com o mesmo par de chaves da autenticação, sem coluna nova no banco; endpoint público `GET /aprovacao-os`, ver `README.md`)
+  - [x] Envio real via SMTP do Gmail — `NotificacaoAprovacaoSmtpService` (profile `default`), `@Async`. Validado de ponta a ponta contra o container Docker real: e-mail chegou de verdade, fluxo de recusa/aprovação/reprocessamento testados manualmente
+  - [x] `NotificacaoAprovacaoLogService` (profiles `test`/`dev`) simula sem tocar rede — mantém os testes automatizados rápidos e determinísticos
+  - [x] Estilização aplicada em todos os cenários: corpo do e-mail em HTML (`AprovacaoEmailTemplate.corpoHtml`, multipart com texto puro como alternativa) e as 5 páginas de confirmação (`PaginaConfirmacaoTemplate` — sucesso/alerta/erro com cor e ícone). Validado visualmente contra o container real (e-mail recebido de verdade + páginas conferidas no navegador)
 
 ## Infraestrutura
 
@@ -29,7 +32,7 @@
 - [x] Deployments — `k8s/deployment.yaml` (probes em `/actuator/health`, resources definidos, chaves JWT montadas via Secret para funcionar com múltiplas réplicas)
 - [x] Services — `k8s/service.yaml` (`LoadBalancer`, porta 80 → 8080)
 - [x] ConfigMaps (variáveis não sensíveis) — `k8s/configmap.yaml` (perfil ativo, host do DB, paths das chaves JWT)
-- [x] Secrets (variáveis sensíveis: credenciais DB, tokens JWT) — `k8s/secret.yaml.example` (template; valor real gerado via `kubectl create secret`, nunca commitado)
+- [x] Secrets (variáveis sensíveis: credenciais DB, tokens JWT, credenciais SMTP) — `k8s/secret.yaml.example` (template; valor real gerado via `kubectl create secret`, nunca commitado). Inclui `GMAIL_SMTP_USERNAME`/`GMAIL_SMTP_PASSWORD`, conectados também no `deployment.yaml` (env do container)
 - [x] Horizontal Pod Autoscaler (HPA) escalando conforme consumo de CPU/memória — `k8s/hpa.yaml` (min 1, max 2 réplicas, alvo 70% CPU)
 - [ ] Placeholders `<RDS_ENDPOINT>` (configmap) e `<ECR_URI>` (deployment) substituídos pelos valores reais após a fase de Terraform/CI-CD
 - [x] Testado fim-a-fim em cluster real (Docker Desktop Kubernetes, kubeadm, nó único): imagem buildada localmente + Postgres local temporário substituindo os placeholders de RDS/ECR só para o teste. Login, listagem de OS e HPA validados; HPA escalou de 1→2 réplicas sob carga real (`SuccessfulRescale`) e o mesmo token JWT foi aceito nas duas réplicas (20/20 requisições 200, sem 401), confirmando que o Secret compartilhado resolve o problema de chaves por-pod. Recursos de teste removidos do cluster ao final.
@@ -52,7 +55,8 @@
 - [x] Etapa de deploy/migração do banco de dados (RDS) — verifica RDS disponível via `aws rds wait db-instance-available`; schema em si é gerenciado pelo Hibernate `ddl-auto=update` no boot (sem Flyway/Liquibase), documentado no README
 - [x] Etapa de aplicação dos manifestos YAML no cluster — substitui placeholders `<RDS_ENDPOINT>`/`<ECR_URI>` via `sed` e aplica `configmap/deployment/service/hpa`
 - [x] Validado com `actionlint` (com `shellcheck` para os blocos `run:`) — 0 problemas encontrados
-- [x] Secrets necessários documentados no `README.md` principal (AWS, ECR, RDS, DB_PASSWORD, chaves JWT)
+- [x] Secrets necessários documentados no `README.md` principal (AWS, ECR, RDS, DB_PASSWORD, chaves JWT, credenciais SMTP do Gmail)
+- [x] Criação/atualização do Secret no job `deploy` inclui `GMAIL_SMTP_USERNAME`/`GMAIL_SMTP_PASSWORD` — revalidado com `actionlint` após a mudança
 - [ ] Nunca executado de verdade (precisa do repositório no GitHub com os secrets configurados e da infraestrutura do Terraform já aplicada)
 
 ## Entregáveis da Fase 2

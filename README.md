@@ -1,6 +1,6 @@
 # Oficina Mecânica — Sistema Integrado de Atendimento
 
-> Tech Challenge — FIAP SOAT Fase 1
+> Tech Challenge — FIAP SOAT Fase 2
 > Back-end monolítico com Spring Boot 3.2 · Java 21 · PostgreSQL / H2
 
 ---
@@ -120,10 +120,14 @@ A aplicação sobe em `http://localhost:8080` com banco H2 in-memory.
 ### Execução com Docker (PostgreSQL)
 
 ```bash
+cp .env.example .env
+# edite .env com suas credenciais reais do Gmail (opcional — sem isso o envio de
+# e-mail real falha silenciosamente, só loga um warning; o resto da aplicação funciona normal)
+
 docker-compose up --build
 ```
 
-Sobe dois containers: **postgres** (PostgreSQL 16) e **oficina-api** (Spring Boot). A API aguarda o banco estar saudável antes de iniciar.
+Sobe dois containers: **postgres** (PostgreSQL 16) e **oficina-api** (Spring Boot). A API aguarda o banco estar saudável antes de iniciar. O `docker-compose` carrega o `.env` (gitignorado) automaticamente e repassa `GMAIL_SMTP_USERNAME`/`GMAIL_SMTP_PASSWORD` para o container.
 
 ### Deploy em Kubernetes (produção — AWS EKS)
 
@@ -159,6 +163,7 @@ Pré-requisito: os recursos do Terraform (`/infra`) já precisam existir (EKS, R
 | `RDS_ENDPOINT` | Endpoint do banco | `terraform output rds_endpoint` |
 | `DB_PASSWORD` | Mesma senha usada no `terraform.tfvars` | Definida por você |
 | `JWT_PRIVATE_KEY` / `JWT_PUBLIC_KEY` | Conteúdo (PEM) do par de chaves RSA — o mesmo par para todas as réplicas, ver [`k8s/README.md`](k8s/README.md) | Gerado uma vez via `openssl` |
+| `GMAIL_SMTP_USERNAME` / `GMAIL_SMTP_PASSWORD` | Endereço Gmail remetente e sua App Password | Conta Google → Segurança → Verificação em duas etapas → Senhas de app |
 
 ---
 
@@ -200,21 +205,29 @@ mvn verify
 
 | Pacote | Cobertura |
 |--------|-----------|
-| `controller` | 93,8% |
-| `service` | 87,0% |
-| `domain.model` | 100% |
-| `handler` | 96,9% |
+| `config` | 100% |
+| `controller` | 94,8% |
+| `domain.enums` | 100% |
+| `domain.model` | 96,5% |
+| `dto.request` | 100% |
+| `dto.response` | 95,5% |
+| `handler` | 98,2% |
+| `handler.exception` | 100% |
+| `service` | 90,5% |
+| `validation` | 61,2% |
+| **Total** | **92,6%** |
 
-Cobertura mínima exigida pelo gate do JaCoCo: **80%**.
+Cobertura mínima exigida pelo gate do JaCoCo: **80%**. 140 testes no total (unitários + integração).
 
 ### Tipos de testes
 
 | Classe | Tipo |
 |--------|------|
-| `*ServiceTest` | Testes unitários com Mockito |
+| `*ServiceUnitTest` | Testes unitários com Mockito |
 | `*ControllerIT` | Testes de integração com `@SpringBootTest` + MockMvc |
-| `Ordem/OsItem/SaldoEstoqueTest` | Testes de domínio |
-| `GlobalExceptionHandlerTest` | Testes do exception handler |
+| `OrdemServicoUnitTest`, `OsItemUnitTest`, `SaldoEstoqueUnitTest` | Testes de domínio |
+| `AprovacaoTokenServiceUnitTest` | Testes do token JWT de aprovação por e-mail |
+| `GlobalExceptionHandlerUnitTest` | Testes do exception handler |
 
 ---
 
@@ -287,6 +300,35 @@ Authorization: Bearer <token>
 
 ---
 
+### Aprovação de orçamento por e-mail — `/aprovacao-os`
+
+| Método | Endpoint | Autenticação | Descrição |
+|--------|----------|-------------|-----------|
+| GET | `/aprovacao-os?token=...` | **Pública** (sem JWT) | Acionado pelos links do e-mail enviado ao cliente quando a OS entra em `AGUARDANDO_APROVACAO` |
+
+Quando a OS avança para `AGUARDANDO_APROVACAO`, o sistema gera dois links assinados (JWT curto,
+reaproveitando o mesmo par de chaves RSA da autenticação — um para aprovar e outro para recusar) e
+envia um e-mail **HTML estilizado** ao cliente (cabeçalho, tabela com veículo/itens/valor total,
+botões de aprovar/recusar), com uma versão em texto puro como alternativa para clientes de e-mail
+que não renderizam HTML.
+
+O envio troca de implementação automaticamente por profile do Spring — o mesmo mecanismo já usado
+para alternar H2/PostgreSQL, sem property nova:
+- `dev` / `test` → `NotificacaoAprovacaoLogService`: simula, só loga o conteúdo formatado (sem tocar rede — mantém os testes rápidos e determinísticos)
+- `default` (Docker/K8s/produção) → `NotificacaoAprovacaoSmtpService`: envia de verdade via SMTP do Gmail, de forma assíncrona (`@Async`) para não segurar a resposta da API nem a transação esperando o SMTP responder
+
+Credenciais via `GMAIL_SMTP_USERNAME`/`GMAIL_SMTP_PASSWORD` (App Password do Gmail — Conta Google →
+Segurança → Verificação em duas etapas → Senhas de app, nunca a senha normal da conta).
+
+Ao clicar em um dos links, o endpoint público valida o token (assinatura + expiração, configurável
+via `app.aprovacao-email.token-validade-dias`, padrão 7 dias) e aplica a mesma regra de negócio do
+`PATCH /aprovar`, devolvendo uma página HTML estilizada de confirmação (sucesso, link inválido/expirado,
+OS não encontrada, ou orçamento já processado — cada cenário com cor/ícone próprio). Não há coluna
+nova no banco: o próprio status atual da OS garante que o link só funciona uma vez (depois de
+aprovada/recusada, uma nova tentativa com o mesmo token retorna 409).
+
+---
+
 ### Produtos e Estoque — `/api/produtos`
 
 | Método | Endpoint | Roles | Descrição |
@@ -336,6 +378,7 @@ fiap-15soat-oficina-api/
 | Spring Security + OAuth2 Resource Server | — | Autenticação JWT |
 | Spring Data JPA | — | Persistência |
 | Spring Validation + Hibernate Validator BR | — | Validação de DTOs e CPF/CNPJ |
+| Spring Boot Starter Mail | — | Envio do e-mail de aprovação de orçamento via SMTP do Gmail |
 | PostgreSQL | 16 | Banco em produção |
 | H2 | — | Banco em desenvolvimento/testes |
 | springdoc-openapi | 2.5.0 | Swagger UI / OpenAPI 3 |
