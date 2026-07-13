@@ -24,6 +24,8 @@ import br.com.fiap.oficina.handler.exception.RecursoNaoEncontradoException;
 import br.com.fiap.oficina.handler.exception.RegraDeNegocioException;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,6 +37,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class OrdemServicoService {
@@ -59,6 +62,11 @@ public class OrdemServicoService {
     private final ProdutoService produtoService;
     private final ClienteService clienteService;
     private final VeiculoService veiculoService;
+    private final AprovacaoTokenService aprovacaoTokenService;
+    private final NotificacaoAprovacaoService notificacaoAprovacaoService;
+
+    @Value("${app.public-base-url:http://localhost:8080}")
+    private String publicBaseUrl;
 
     @Transactional
     public OrdemServicoResponse criar(OrdemServicoRequest request) {
@@ -157,7 +165,42 @@ public class OrdemServicoService {
             registrarSaidasEstoque(os);
         }
 
-        return toResponse(osRepository.save(os));
+        OrdemServico osSalva = osRepository.save(os);
+
+        if (novoStatus == StatusOS.AGUARDANDO_APROVACAO) {
+            notificarAprovacaoPendente(osSalva);
+        }
+
+        return toResponse(osSalva);
+    }
+
+    private void notificarAprovacaoPendente(OrdemServico os) {
+        try {
+            String tokenAprovar = aprovacaoTokenService.gerarToken(os.getId(), true);
+            String tokenRecusar = aprovacaoTokenService.gerarToken(os.getId(), false);
+            String linkAprovar = publicBaseUrl + "/aprovacao-os?token=" + tokenAprovar;
+            String linkRecusar = publicBaseUrl + "/aprovacao-os?token=" + tokenRecusar;
+
+            // Materializa os dados (inclusive os lazies cliente/veiculo/itens/produto) aqui,
+            // ainda na thread/transacao da requisicao, antes de repassar para a implementacao
+            // @Async — que roda em outra thread e nao pode tocar a Session do Hibernate.
+            var dados = new NotificacaoAprovacaoService.Dados(
+                    os.getNumero(),
+                    os.getCliente().getNome(),
+                    os.getCliente().getEmail(),
+                    os.getVeiculo().getMarca(),
+                    os.getVeiculo().getModelo(),
+                    os.getVeiculo().getPlaca(),
+                    os.getItens().stream()
+                            .map(item -> new NotificacaoAprovacaoService.Dados.Item(
+                                    item.getProduto().getNome(), item.getQuantidade(), item.getPrecoUnitario()))
+                            .toList(),
+                    os.getValorTotal());
+
+            notificacaoAprovacaoService.notificar(dados, linkAprovar, linkRecusar);
+        } catch (Exception e) {
+            log.warn("Falha ao notificar cliente sobre aprovação pendente da OS {}: {}", os.getNumero(), e.getMessage());
+        }
     }
 
     @Transactional

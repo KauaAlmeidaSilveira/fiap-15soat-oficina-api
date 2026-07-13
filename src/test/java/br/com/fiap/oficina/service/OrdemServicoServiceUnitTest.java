@@ -29,6 +29,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -38,6 +39,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -55,6 +57,8 @@ class OrdemServicoServiceUnitTest {
     @Mock EntityManager entityManager;
     @Mock ClienteService clienteService;
     @Mock VeiculoService veiculoService;
+    @Mock AprovacaoTokenService aprovacaoTokenService;
+    @Mock NotificacaoAprovacaoService notificacaoAprovacaoService;
     @InjectMocks OrdemServicoService osService;
 
     private Cliente cliente;
@@ -64,6 +68,8 @@ class OrdemServicoServiceUnitTest {
 
     @BeforeEach
     void setup() {
+        ReflectionTestUtils.setField(osService, "publicBaseUrl", "http://localhost:8080");
+
         cliente = Cliente.builder().id(1L).nome("João").cpfCnpj("12345678901")
                 .tipoDocumento(TipoDocumento.CPF).criadoEm(LocalDateTime.now()).build();
 
@@ -133,6 +139,47 @@ class OrdemServicoServiceUnitTest {
         OrdemServicoResponse response = osService.avancarStatus(1L);
 
         assertThat(response.status()).isEqualTo(StatusOS.EM_DIAGNOSTICO);
+        verify(notificacaoAprovacaoService, never()).notificar(any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("Deve notificar cliente por e-mail ao avançar para AGUARDANDO_APROVACAO")
+    void deveNotificarClienteAoEntrarEmAguardandoAprovacao() {
+        os.setStatus(StatusOS.EM_DIAGNOSTICO);
+
+        when(osRepository.findById(1L)).thenReturn(Optional.of(os));
+        when(osRepository.save(any())).thenReturn(os);
+        when(clienteService.toResponse(any())).thenCallRealMethod();
+        when(veiculoService.toResponse(any())).thenCallRealMethod();
+        when(aprovacaoTokenService.gerarToken(1L, true)).thenReturn("token-aprovar");
+        when(aprovacaoTokenService.gerarToken(1L, false)).thenReturn("token-recusar");
+
+        OrdemServicoResponse response = osService.avancarStatus(1L);
+
+        var dadosEsperados = new NotificacaoAprovacaoService.Dados(
+                "OS1234567890", "João", null, "Toyota", "Corolla", "ABC1234", List.of(), BigDecimal.ZERO);
+
+        assertThat(response.status()).isEqualTo(StatusOS.AGUARDANDO_APROVACAO);
+        verify(notificacaoAprovacaoService).notificar(
+                dadosEsperados,
+                "http://localhost:8080/aprovacao-os?token=token-aprovar",
+                "http://localhost:8080/aprovacao-os?token=token-recusar");
+    }
+
+    @Test
+    @DisplayName("Falha ao notificar não deve impedir o avanço de status")
+    void falhaAoNotificarNaoDeveQuebrarAvancoDeStatus() {
+        os.setStatus(StatusOS.EM_DIAGNOSTICO);
+
+        when(osRepository.findById(1L)).thenReturn(Optional.of(os));
+        when(osRepository.save(any())).thenReturn(os);
+        when(clienteService.toResponse(any())).thenCallRealMethod();
+        when(veiculoService.toResponse(any())).thenCallRealMethod();
+        when(aprovacaoTokenService.gerarToken(any(), anyBoolean())).thenThrow(new RuntimeException("SMTP indisponível"));
+
+        OrdemServicoResponse response = osService.avancarStatus(1L);
+
+        assertThat(response.status()).isEqualTo(StatusOS.AGUARDANDO_APROVACAO);
     }
 
     @Test
