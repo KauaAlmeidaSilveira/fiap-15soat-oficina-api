@@ -1,17 +1,19 @@
-package br.com.fiap.oficina.controller;
+package br.com.fiap.oficina.entrypoint.controller;
 
 import br.com.fiap.oficina.core.domain.enums.StatusOS;
+import br.com.fiap.oficina.core.usecase.OrdemServicoUseCase;
+import br.com.fiap.oficina.core.usecase.OrdemServicoUseCase.ItemNovo;
 import br.com.fiap.oficina.dto.request.AprovarOsRequest;
 import br.com.fiap.oficina.dto.request.OrdemServicoRequest;
 import br.com.fiap.oficina.dto.response.OrdemServicoResponse;
-import br.com.fiap.oficina.service.OrdemServicoService;
+import br.com.fiap.oficina.entrypoint.controller.mapper.OrdemServicoDtoMapper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -31,13 +33,19 @@ import java.util.Map;
 @Tag(name = "Ordens de Serviço", description = "Gestão completa de ordens de serviço")
 public class OrdemServicoController {
 
-    private final OrdemServicoService osService;
+    private final OrdemServicoUseCase ordemServicoUseCase;
+    private final OrdemServicoDtoMapper mapper;
 
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'RECEPCAO')")
     @Operation(summary = "Criar nova Ordem de Serviço")
     public ResponseEntity<OrdemServicoResponse> criar(@Valid @RequestBody OrdemServicoRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(osService.criar(request));
+        List<ItemNovo> itens = request.itens() == null ? List.of() : request.itens().stream()
+                .map(i -> new ItemNovo(i.produtoId(), i.quantidade(), i.precoUnitario(), i.observacao()))
+                .toList();
+        var criada = ordemServicoUseCase.criar(request.clienteId(), request.veiculoId(),
+                request.descricaoProblema(), request.observacoes(), itens);
+        return ResponseEntity.status(HttpStatus.CREATED).body(mapper.toResponse(criada));
     }
 
     @GetMapping
@@ -49,28 +57,34 @@ public class OrdemServicoController {
     public ResponseEntity<List<OrdemServicoResponse>> listar(
             @RequestParam(required = false) StatusOS status,
             @RequestParam(required = false) Long clienteId) {
-        if (status != null) return ResponseEntity.ok(osService.listarPorStatus(status));
-        if (clienteId != null) return ResponseEntity.ok(osService.listarPorCliente(clienteId));
-        return ResponseEntity.ok(osService.listarTodas());
+        List<OrdemServicoResponse> resultado;
+        if (status != null) {
+            resultado = ordemServicoUseCase.listarPorStatus(status).stream().map(mapper::toResponse).toList();
+        } else if (clienteId != null) {
+            resultado = ordemServicoUseCase.listarPorCliente(clienteId).stream().map(mapper::toResponse).toList();
+        } else {
+            resultado = ordemServicoUseCase.listarTodas().stream().map(mapper::toResponse).toList();
+        }
+        return ResponseEntity.ok(resultado);
     }
 
     @GetMapping("/{id}")
     @Operation(summary = "Buscar OS por ID")
     public ResponseEntity<OrdemServicoResponse> buscarPorId(@PathVariable Long id) {
-        return ResponseEntity.ok(osService.buscarPorId(id));
+        return ResponseEntity.ok(mapper.toResponse(ordemServicoUseCase.buscarPorId(id)));
     }
 
     @GetMapping("/numero/{numero}")
     @Operation(summary = "Buscar OS por número (acesso do cliente)")
     public ResponseEntity<OrdemServicoResponse> buscarPorNumero(@PathVariable String numero) {
-        return ResponseEntity.ok(osService.buscarPorNumero(numero));
+        return ResponseEntity.ok(mapper.toResponse(ordemServicoUseCase.buscarPorNumero(numero)));
     }
 
     @PatchMapping("/{id}/avancar-status")
     @PreAuthorize("hasAnyRole('ADMIN', 'OPERADOR')")
     @Operation(summary = "Avançar status da OS para o próximo")
     public ResponseEntity<OrdemServicoResponse> avancarStatus(@PathVariable Long id) {
-        return ResponseEntity.ok(osService.avancarStatus(id));
+        return ResponseEntity.ok(mapper.toResponse(ordemServicoUseCase.avancarStatus(id)));
     }
 
     @PatchMapping("/{id}/aprovar")
@@ -79,7 +93,7 @@ public class OrdemServicoController {
     public ResponseEntity<OrdemServicoResponse> aprovar(
             @PathVariable Long id,
             @Valid @RequestBody AprovarOsRequest request) {
-        return ResponseEntity.ok(osService.aprovar(id, request));
+        return ResponseEntity.ok(mapper.toResponse(ordemServicoUseCase.aprovar(id, request.aprovado())));
     }
 
     @PostMapping("/{id}/itens")
@@ -88,7 +102,9 @@ public class OrdemServicoController {
     public ResponseEntity<OrdemServicoResponse> adicionarItem(
             @PathVariable Long id,
             @Valid @RequestBody OrdemServicoRequest.OsItemRequest itemRequest) {
-        return ResponseEntity.ok(osService.adicionarItem(id, itemRequest));
+        var itemNovo = new ItemNovo(itemRequest.produtoId(), itemRequest.quantidade(),
+                itemRequest.precoUnitario(), itemRequest.observacao());
+        return ResponseEntity.ok(mapper.toResponse(ordemServicoUseCase.adicionarItem(id, itemNovo)));
     }
 
     @DeleteMapping("/{id}/itens/{itemId}")
@@ -97,13 +113,13 @@ public class OrdemServicoController {
     public ResponseEntity<OrdemServicoResponse> removerItem(
             @PathVariable Long id,
             @PathVariable Long itemId) {
-        return ResponseEntity.ok(osService.removerItem(id, itemId));
+        return ResponseEntity.ok(mapper.toResponse(ordemServicoUseCase.removerItem(id, itemId)));
     }
 
     @GetMapping("/metricas/tempo-medio")
     @Operation(summary = "Tempo médio de execução das OS em horas")
     public ResponseEntity<Map<String, Object>> tempoMedio() {
-        Double tempo = osService.tempoMedioExecucao();
+        Double tempo = ordemServicoUseCase.tempoMedioExecucao();
         return ResponseEntity.ok(Map.of("tempoMedioHoras", tempo != null ? tempo : 0.0));
     }
 }

@@ -1,4 +1,4 @@
-package br.com.fiap.oficina.controller;
+package br.com.fiap.oficina.entrypoint.controller;
 
 final class PaginaConfirmacaoTemplate {
 
