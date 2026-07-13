@@ -1,6 +1,6 @@
 package br.com.fiap.oficina.controller;
 
-import br.com.fiap.oficina.domain.enums.StatusOS;
+import br.com.fiap.oficina.core.domain.enums.StatusOS;
 import br.com.fiap.oficina.dto.request.AprovarOsRequest;
 import br.com.fiap.oficina.dto.request.OrdemServicoRequest;
 import br.com.fiap.oficina.dto.response.OrdemServicoResponse;

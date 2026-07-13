@@ -3,7 +3,7 @@ package br.com.fiap.oficina.service;
 import br.com.fiap.oficina.domain.model.User;
 import br.com.fiap.oficina.domain.repository.UserRepository;
 import br.com.fiap.oficina.dto.request.LoginRequest;
-import br.com.fiap.oficina.handler.exception.RecursoNaoEncontradoException;
+import br.com.fiap.oficina.core.domain.exception.RecursoNaoEncontradoException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

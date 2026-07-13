@@ -8,7 +8,7 @@ import br.com.fiap.oficina.dto.request.LoginRequest;
 import br.com.fiap.oficina.dto.request.RegisterRequest;
 import br.com.fiap.oficina.dto.response.LoginResponse;
 import br.com.fiap.oficina.dto.response.RegisterResponse;
-import br.com.fiap.oficina.handler.exception.RegraDeNegocioException;
+import br.com.fiap.oficina.core.domain.exception.RegraDeNegocioException;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;

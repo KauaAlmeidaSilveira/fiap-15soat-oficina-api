@@ -1,13 +1,13 @@
 package br.com.fiap.oficina.service;
 
-import br.com.fiap.oficina.domain.enums.StatusOS;
-import br.com.fiap.oficina.domain.enums.TipoDocumento;
-import br.com.fiap.oficina.domain.enums.TipoProduto;
+import br.com.fiap.oficina.core.domain.enums.StatusOS;
+import br.com.fiap.oficina.core.domain.enums.TipoDocumento;
+import br.com.fiap.oficina.core.domain.enums.TipoProduto;
 import br.com.fiap.oficina.domain.model.Cliente;
 import br.com.fiap.oficina.domain.model.OrdemServico;
 import br.com.fiap.oficina.domain.model.Produto;
 import br.com.fiap.oficina.domain.model.Veiculo;
-import br.com.fiap.oficina.domain.enums.TipoMovimentacao;
+import br.com.fiap.oficina.core.domain.enums.TipoMovimentacao;
 import br.com.fiap.oficina.domain.model.MovimentacaoEstoque;
 import br.com.fiap.oficina.domain.model.OsItem;
 import br.com.fiap.oficina.domain.repository.ClienteRepository;
@@ -19,8 +19,9 @@ import br.com.fiap.oficina.domain.repository.VeiculoRepository;
 import br.com.fiap.oficina.dto.request.AprovarOsRequest;
 import br.com.fiap.oficina.dto.request.OrdemServicoRequest;
 import br.com.fiap.oficina.dto.response.OrdemServicoResponse;
-import br.com.fiap.oficina.handler.exception.RecursoNaoEncontradoException;
-import br.com.fiap.oficina.handler.exception.RegraDeNegocioException;
+import br.com.fiap.oficina.core.domain.exception.RecursoNaoEncontradoException;
+import br.com.fiap.oficina.core.domain.exception.RegraDeNegocioException;
+import br.com.fiap.oficina.core.gateway.NotificacaoAprovacaoGateway;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -58,7 +59,7 @@ class OrdemServicoServiceUnitTest {
     @Mock ClienteService clienteService;
     @Mock VeiculoService veiculoService;
     @Mock AprovacaoTokenService aprovacaoTokenService;
-    @Mock NotificacaoAprovacaoService notificacaoAprovacaoService;
+    @Mock NotificacaoAprovacaoGateway notificacaoAprovacaoService;
     @InjectMocks OrdemServicoService osService;
 
     private Cliente cliente;
@@ -156,7 +157,7 @@ class OrdemServicoServiceUnitTest {
 
         OrdemServicoResponse response = osService.avancarStatus(1L);
 
-        var dadosEsperados = new NotificacaoAprovacaoService.Dados(
+        var dadosEsperados = new NotificacaoAprovacaoGateway.Dados(
                 "OS1234567890", "João", null, "Toyota", "Corolla", "ABC1234", List.of(), BigDecimal.ZERO);
 
         assertThat(response.status()).isEqualTo(StatusOS.AGUARDANDO_APROVACAO);

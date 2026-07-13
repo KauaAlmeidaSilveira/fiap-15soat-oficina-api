@@ -1,9 +1,9 @@
 package br.com.fiap.oficina.controller;
 
 import br.com.fiap.oficina.dto.request.AprovarOsRequest;
-import br.com.fiap.oficina.handler.exception.RecursoNaoEncontradoException;
-import br.com.fiap.oficina.handler.exception.RegraDeNegocioException;
-import br.com.fiap.oficina.handler.exception.TokenAprovacaoInvalidoException;
+import br.com.fiap.oficina.core.domain.exception.RecursoNaoEncontradoException;
+import br.com.fiap.oficina.core.domain.exception.RegraDeNegocioException;
+import br.com.fiap.oficina.core.domain.exception.TokenAprovacaoInvalidoException;
 import br.com.fiap.oficina.service.AprovacaoTokenService;
 import br.com.fiap.oficina.service.OrdemServicoService;
 import io.swagger.v3.oas.annotations.Operation;

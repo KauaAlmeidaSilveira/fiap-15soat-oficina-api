@@ -1,7 +1,7 @@
-package br.com.fiap.oficina.handler;
+package br.com.fiap.oficina.config;
 
-import br.com.fiap.oficina.handler.exception.RecursoNaoEncontradoException;
-import br.com.fiap.oficina.handler.exception.RegraDeNegocioException;
+import br.com.fiap.oficina.core.domain.exception.RecursoNaoEncontradoException;
+import br.com.fiap.oficina.core.domain.exception.RegraDeNegocioException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;

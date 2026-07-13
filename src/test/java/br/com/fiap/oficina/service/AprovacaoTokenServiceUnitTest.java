@@ -1,6 +1,6 @@
 package br.com.fiap.oficina.service;
 
-import br.com.fiap.oficina.handler.exception.TokenAprovacaoInvalidoException;
+import br.com.fiap.oficina.core.domain.exception.TokenAprovacaoInvalidoException;
 import com.nimbusds.jose.jwk.JWK;
 import com.nimbusds.jose.jwk.JWKSet;
 import com.nimbusds.jose.jwk.RSAKey;

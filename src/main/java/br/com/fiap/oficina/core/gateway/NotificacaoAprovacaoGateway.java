@@ -1,9 +1,9 @@
-package br.com.fiap.oficina.service;
+package br.com.fiap.oficina.core.gateway;
 
 import java.math.BigDecimal;
 import java.util.List;
 
-public interface NotificacaoAprovacaoService {
+public interface NotificacaoAprovacaoGateway {
 
     void notificar(Dados dados, String linkAprovar, String linkRecusar);
 

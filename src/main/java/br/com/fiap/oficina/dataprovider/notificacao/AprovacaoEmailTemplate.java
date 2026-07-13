@@ -1,14 +1,16 @@
-package br.com.fiap.oficina.service;
+package br.com.fiap.oficina.dataprovider.notificacao;
+
+import br.com.fiap.oficina.core.gateway.NotificacaoAprovacaoGateway;
 
 final class AprovacaoEmailTemplate {
 
     private AprovacaoEmailTemplate() {}
 
-    static String assunto(NotificacaoAprovacaoService.Dados dados) {
+    static String assunto(NotificacaoAprovacaoGateway.Dados dados) {
         return "Orçamento da OS " + dados.numeroOS() + " aguardando aprovação";
     }
 
-    static String corpo(NotificacaoAprovacaoService.Dados dados, String linkAprovar, String linkRecusar) {
+    static String corpo(NotificacaoAprovacaoGateway.Dados dados, String linkAprovar, String linkRecusar) {
         StringBuilder corpo = new StringBuilder();
         corpo.append("Olá, ").append(dados.clienteNome()).append("!\n\n");
         corpo.append("O orçamento da sua Ordem de Serviço ").append(dados.numeroOS())
@@ -28,7 +30,7 @@ final class AprovacaoEmailTemplate {
         return corpo.toString();
     }
 
-    static String corpoHtml(NotificacaoAprovacaoService.Dados dados, String linkAprovar, String linkRecusar) {
+    static String corpoHtml(NotificacaoAprovacaoGateway.Dados dados, String linkAprovar, String linkRecusar) {
         StringBuilder linhasItens = new StringBuilder();
         for (var item : dados.itens()) {
             linhasItens.append("""

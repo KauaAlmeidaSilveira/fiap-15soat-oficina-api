@@ -1,8 +1,8 @@
 package br.com.fiap.oficina.domain;
 
-import br.com.fiap.oficina.domain.enums.StatusOS;
-import br.com.fiap.oficina.domain.enums.TipoDocumento;
-import br.com.fiap.oficina.domain.enums.TipoProduto;
+import br.com.fiap.oficina.core.domain.enums.StatusOS;
+import br.com.fiap.oficina.core.domain.enums.TipoDocumento;
+import br.com.fiap.oficina.core.domain.enums.TipoProduto;
 import br.com.fiap.oficina.domain.model.Cliente;
 import br.com.fiap.oficina.domain.model.OrdemServico;
 import br.com.fiap.oficina.domain.model.Produto;
@@ -14,7 +14,7 @@ import br.com.fiap.oficina.domain.repository.ProdutoRepository;
 import br.com.fiap.oficina.domain.repository.VeiculoRepository;
 import br.com.fiap.oficina.dto.request.OrdemServicoRequest;
 import br.com.fiap.oficina.dto.response.OrdemServicoResponse;
-import br.com.fiap.oficina.handler.exception.RegraDeNegocioException;
+import br.com.fiap.oficina.core.domain.exception.RegraDeNegocioException;
 import br.com.fiap.oficina.service.ClienteService;
 import br.com.fiap.oficina.service.OrdemServicoService;
 import br.com.fiap.oficina.service.ProdutoService;

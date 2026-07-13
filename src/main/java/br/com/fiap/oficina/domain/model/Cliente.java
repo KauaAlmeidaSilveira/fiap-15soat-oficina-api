@@ -1,6 +1,6 @@
 package br.com.fiap.oficina.domain.model;
 
-import br.com.fiap.oficina.domain.enums.TipoDocumento;
+import br.com.fiap.oficina.core.domain.enums.TipoDocumento;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

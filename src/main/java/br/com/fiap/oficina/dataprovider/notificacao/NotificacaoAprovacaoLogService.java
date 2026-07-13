@@ -1,5 +1,6 @@
-package br.com.fiap.oficina.service;
+package br.com.fiap.oficina.dataprovider.notificacao;
 
+import br.com.fiap.oficina.core.gateway.NotificacaoAprovacaoGateway;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
@@ -7,7 +8,7 @@ import org.springframework.stereotype.Service;
 @Slf4j
 @Service
 @Profile({"test", "dev"})
-public class NotificacaoAprovacaoLogService implements NotificacaoAprovacaoService {
+public class NotificacaoAprovacaoLogService implements NotificacaoAprovacaoGateway {
 
     @Override
     public void notificar(Dados dados, String linkAprovar, String linkRecusar) {

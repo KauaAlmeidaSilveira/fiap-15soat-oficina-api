@@ -1,5 +1,6 @@
-package br.com.fiap.oficina.service;
+package br.com.fiap.oficina.dataprovider.notificacao;
 
+import br.com.fiap.oficina.core.gateway.NotificacaoAprovacaoGateway;
 import jakarta.mail.internet.MimeMessage;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -26,7 +27,7 @@ class NotificacaoAprovacaoSmtpServiceUnitTest {
     @Mock JavaMailSender mailSender;
     NotificacaoAprovacaoSmtpService service;
 
-    private NotificacaoAprovacaoService.Dados dados;
+    private NotificacaoAprovacaoGateway.Dados dados;
 
     @BeforeEach
     void setup() {
@@ -36,9 +37,9 @@ class NotificacaoAprovacaoSmtpServiceUnitTest {
         Session session = Session.getDefaultInstance(new Properties());
         when(mailSender.createMimeMessage()).thenReturn(new MimeMessage(session));
 
-        dados = new NotificacaoAprovacaoService.Dados(
+        dados = new NotificacaoAprovacaoGateway.Dados(
                 "OS123", "Carlos", "carlos@email.com", "VW", "Gol", "XYZ1234",
-                List.of(new NotificacaoAprovacaoService.Dados.Item("Óleo", 2, new BigDecimal("50.00"))),
+                List.of(new NotificacaoAprovacaoGateway.Dados.Item("Óleo", 2, new BigDecimal("50.00"))),
                 BigDecimal.TEN);
     }
 

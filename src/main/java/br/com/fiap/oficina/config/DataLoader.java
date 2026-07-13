@@ -1,9 +1,9 @@
 package br.com.fiap.oficina.config;
 
-import br.com.fiap.oficina.domain.enums.StatusOS;
-import br.com.fiap.oficina.domain.enums.TipoDocumento;
-import br.com.fiap.oficina.domain.enums.TipoMovimentacao;
-import br.com.fiap.oficina.domain.enums.TipoProduto;
+import br.com.fiap.oficina.core.domain.enums.StatusOS;
+import br.com.fiap.oficina.core.domain.enums.TipoDocumento;
+import br.com.fiap.oficina.core.domain.enums.TipoMovimentacao;
+import br.com.fiap.oficina.core.domain.enums.TipoProduto;
 import br.com.fiap.oficina.domain.model.Cliente;
 import br.com.fiap.oficina.domain.model.ClienteVeiculo;
 import br.com.fiap.oficina.domain.model.MovimentacaoEstoque;

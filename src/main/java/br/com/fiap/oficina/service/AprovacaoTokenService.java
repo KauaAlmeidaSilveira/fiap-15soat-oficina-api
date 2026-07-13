@@ -1,6 +1,6 @@
 package br.com.fiap.oficina.service;
 
-import br.com.fiap.oficina.handler.exception.TokenAprovacaoInvalidoException;
+import br.com.fiap.oficina.core.domain.exception.TokenAprovacaoInvalidoException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.oauth2.jwt.Jwt;

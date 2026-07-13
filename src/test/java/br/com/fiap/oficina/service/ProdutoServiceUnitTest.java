@@ -1,7 +1,7 @@
 package br.com.fiap.oficina.service;
 
-import br.com.fiap.oficina.domain.enums.TipoMovimentacao;
-import br.com.fiap.oficina.domain.enums.TipoProduto;
+import br.com.fiap.oficina.core.domain.enums.TipoMovimentacao;
+import br.com.fiap.oficina.core.domain.enums.TipoProduto;
 import br.com.fiap.oficina.domain.model.MovimentacaoEstoque;
 import br.com.fiap.oficina.domain.model.Produto;
 import br.com.fiap.oficina.domain.model.SaldoEstoque;
@@ -13,8 +13,8 @@ import br.com.fiap.oficina.dto.request.MovimentacaoEstoqueRequest;
 import br.com.fiap.oficina.dto.request.ProdutoRequest;
 import br.com.fiap.oficina.dto.response.MovimentacaoEstoqueResponse;
 import br.com.fiap.oficina.dto.response.ProdutoResponse;
-import br.com.fiap.oficina.handler.exception.RecursoNaoEncontradoException;
-import br.com.fiap.oficina.handler.exception.RegraDeNegocioException;
+import br.com.fiap.oficina.core.domain.exception.RecursoNaoEncontradoException;
+import br.com.fiap.oficina.core.domain.exception.RegraDeNegocioException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

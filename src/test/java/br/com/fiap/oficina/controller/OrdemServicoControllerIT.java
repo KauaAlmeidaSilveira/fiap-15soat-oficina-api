@@ -1,7 +1,7 @@
 package br.com.fiap.oficina.controller;
 
-import br.com.fiap.oficina.domain.enums.TipoDocumento;
-import br.com.fiap.oficina.domain.enums.TipoProduto;
+import br.com.fiap.oficina.core.domain.enums.TipoDocumento;
+import br.com.fiap.oficina.core.domain.enums.TipoProduto;
 import br.com.fiap.oficina.dto.request.AprovarOsRequest;
 import br.com.fiap.oficina.dto.request.ClienteRequest;
 import br.com.fiap.oficina.dto.request.MovimentacaoEstoqueRequest;

@@ -1,8 +1,8 @@
 package br.com.fiap.oficina.service;
 
-import br.com.fiap.oficina.domain.enums.StatusOS;
-import br.com.fiap.oficina.domain.enums.TipoMovimentacao;
-import br.com.fiap.oficina.domain.enums.TipoProduto;
+import br.com.fiap.oficina.core.domain.enums.StatusOS;
+import br.com.fiap.oficina.core.domain.enums.TipoMovimentacao;
+import br.com.fiap.oficina.core.domain.enums.TipoProduto;
 import br.com.fiap.oficina.domain.model.Cliente;
 import br.com.fiap.oficina.domain.model.MovimentacaoEstoque;
 import br.com.fiap.oficina.domain.model.OrdemServico;
@@ -20,8 +20,9 @@ import br.com.fiap.oficina.dto.request.OrdemServicoRequest;
 import br.com.fiap.oficina.dto.response.ClienteResponse;
 import br.com.fiap.oficina.dto.response.OrdemServicoResponse;
 import br.com.fiap.oficina.dto.response.VeiculoResponse;
-import br.com.fiap.oficina.handler.exception.RecursoNaoEncontradoException;
-import br.com.fiap.oficina.handler.exception.RegraDeNegocioException;
+import br.com.fiap.oficina.core.domain.exception.RecursoNaoEncontradoException;
+import br.com.fiap.oficina.core.domain.exception.RegraDeNegocioException;
+import br.com.fiap.oficina.core.gateway.NotificacaoAprovacaoGateway;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -63,7 +64,7 @@ public class OrdemServicoService {
     private final ClienteService clienteService;
     private final VeiculoService veiculoService;
     private final AprovacaoTokenService aprovacaoTokenService;
-    private final NotificacaoAprovacaoService notificacaoAprovacaoService;
+    private final NotificacaoAprovacaoGateway notificacaoAprovacaoService;
 
     @Value("${app.public-base-url:http://localhost:8080}")
     private String publicBaseUrl;
@@ -184,7 +185,7 @@ public class OrdemServicoService {
             // Materializa os dados (inclusive os lazies cliente/veiculo/itens/produto) aqui,
             // ainda na thread/transacao da requisicao, antes de repassar para a implementacao
             // @Async — que roda em outra thread e nao pode tocar a Session do Hibernate.
-            var dados = new NotificacaoAprovacaoService.Dados(
+            var dados = new NotificacaoAprovacaoGateway.Dados(
                     os.getNumero(),
                     os.getCliente().getNome(),
                     os.getCliente().getEmail(),
@@ -192,7 +193,7 @@ public class OrdemServicoService {
                     os.getVeiculo().getModelo(),
                     os.getVeiculo().getPlaca(),
                     os.getItens().stream()
-                            .map(item -> new NotificacaoAprovacaoService.Dados.Item(
+                            .map(item -> new NotificacaoAprovacaoGateway.Dados.Item(
                                     item.getProduto().getNome(), item.getQuantidade(), item.getPrecoUnitario()))
                             .toList(),
                     os.getValorTotal());

@@ -1,6 +1,6 @@
 package br.com.fiap.oficina.domain.repository;
 
-import br.com.fiap.oficina.domain.enums.StatusOS;
+import br.com.fiap.oficina.core.domain.enums.StatusOS;
 import br.com.fiap.oficina.domain.model.OrdemServico;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;

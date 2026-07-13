@@ -1,4 +1,4 @@
-package br.com.fiap.oficina.domain.enums;
+package br.com.fiap.oficina.core.domain.enums;
 
 public enum TipoMovimentacao {
     ENTRADA, SAIDA

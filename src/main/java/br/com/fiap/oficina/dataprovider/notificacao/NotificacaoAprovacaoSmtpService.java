@@ -1,5 +1,6 @@
-package br.com.fiap.oficina.service;
+package br.com.fiap.oficina.dataprovider.notificacao;
 
+import br.com.fiap.oficina.core.gateway.NotificacaoAprovacaoGateway;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
@@ -15,7 +16,7 @@ import org.springframework.stereotype.Service;
 @Service
 @Profile("default")
 @RequiredArgsConstructor
-public class NotificacaoAprovacaoSmtpService implements NotificacaoAprovacaoService {
+public class NotificacaoAprovacaoSmtpService implements NotificacaoAprovacaoGateway {
 
     private final JavaMailSender mailSender;
 

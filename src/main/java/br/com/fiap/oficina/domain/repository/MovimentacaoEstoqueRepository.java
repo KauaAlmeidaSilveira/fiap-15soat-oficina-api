@@ -1,6 +1,6 @@
 package br.com.fiap.oficina.domain.repository;
 
-import br.com.fiap.oficina.domain.enums.TipoMovimentacao;
+import br.com.fiap.oficina.core.domain.enums.TipoMovimentacao;
 import br.com.fiap.oficina.domain.model.MovimentacaoEstoque;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -16,7 +16,7 @@ public interface MovimentacaoEstoqueRepository extends JpaRepository<Movimentaca
 
     @Query("""
         SELECT COALESCE(
-            SUM(CASE WHEN m.tipo = br.com.fiap.oficina.domain.enums.TipoMovimentacao.ENTRADA
+            SUM(CASE WHEN m.tipo = br.com.fiap.oficina.core.domain.enums.TipoMovimentacao.ENTRADA
                      THEN m.quantidade
                      ELSE -m.quantidade END)
         , 0)

@@ -1,6 +1,6 @@
 package br.com.fiap.oficina.dto.response;
 
-import br.com.fiap.oficina.domain.enums.TipoMovimentacao;
+import br.com.fiap.oficina.core.domain.enums.TipoMovimentacao;
 
 import java.time.LocalDateTime;
 

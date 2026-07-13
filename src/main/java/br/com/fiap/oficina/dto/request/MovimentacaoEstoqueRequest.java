@@ -1,6 +1,6 @@
 package br.com.fiap.oficina.dto.request;
 
-import br.com.fiap.oficina.domain.enums.TipoMovimentacao;
+import br.com.fiap.oficina.core.domain.enums.TipoMovimentacao;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;

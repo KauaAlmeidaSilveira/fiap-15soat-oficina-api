@@ -1,7 +1,7 @@
 package br.com.fiap.oficina.service;
 
-import br.com.fiap.oficina.domain.enums.TipoMovimentacao;
-import br.com.fiap.oficina.domain.enums.TipoProduto;
+import br.com.fiap.oficina.core.domain.enums.TipoMovimentacao;
+import br.com.fiap.oficina.core.domain.enums.TipoProduto;
 import br.com.fiap.oficina.domain.model.MovimentacaoEstoque;
 import br.com.fiap.oficina.domain.model.OrdemServico;
 import br.com.fiap.oficina.domain.model.Produto;
@@ -14,8 +14,8 @@ import br.com.fiap.oficina.dto.request.MovimentacaoEstoqueRequest;
 import br.com.fiap.oficina.dto.request.ProdutoRequest;
 import br.com.fiap.oficina.dto.response.MovimentacaoEstoqueResponse;
 import br.com.fiap.oficina.dto.response.ProdutoResponse;
-import br.com.fiap.oficina.handler.exception.RecursoNaoEncontradoException;
-import br.com.fiap.oficina.handler.exception.RegraDeNegocioException;
+import br.com.fiap.oficina.core.domain.exception.RecursoNaoEncontradoException;
+import br.com.fiap.oficina.core.domain.exception.RegraDeNegocioException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

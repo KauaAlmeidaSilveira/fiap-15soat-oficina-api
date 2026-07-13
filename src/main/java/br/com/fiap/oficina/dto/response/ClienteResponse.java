@@ -1,6 +1,6 @@
 package br.com.fiap.oficina.dto.response;
 
-import br.com.fiap.oficina.domain.enums.TipoDocumento;
+import br.com.fiap.oficina.core.domain.enums.TipoDocumento;
 
 import java.time.LocalDateTime;
 
