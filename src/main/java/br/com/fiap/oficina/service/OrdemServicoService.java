@@ -23,6 +23,7 @@ import br.com.fiap.oficina.dto.response.VeiculoResponse;
 import br.com.fiap.oficina.core.domain.exception.RecursoNaoEncontradoException;
 import br.com.fiap.oficina.core.domain.exception.RegraDeNegocioException;
 import br.com.fiap.oficina.core.gateway.NotificacaoAprovacaoGateway;
+import br.com.fiap.oficina.core.gateway.TokenAprovacaoGateway;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -63,7 +64,7 @@ public class OrdemServicoService {
     private final ProdutoService produtoService;
     private final ClienteService clienteService;
     private final VeiculoService veiculoService;
-    private final AprovacaoTokenService aprovacaoTokenService;
+    private final TokenAprovacaoGateway aprovacaoTokenService;
     private final NotificacaoAprovacaoGateway notificacaoAprovacaoService;
 
     @Value("${app.public-base-url:http://localhost:8080}")

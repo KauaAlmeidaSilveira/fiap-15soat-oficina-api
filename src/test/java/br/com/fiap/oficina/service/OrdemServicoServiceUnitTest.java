@@ -22,6 +22,7 @@ import br.com.fiap.oficina.dto.response.OrdemServicoResponse;
 import br.com.fiap.oficina.core.domain.exception.RecursoNaoEncontradoException;
 import br.com.fiap.oficina.core.domain.exception.RegraDeNegocioException;
 import br.com.fiap.oficina.core.gateway.NotificacaoAprovacaoGateway;
+import br.com.fiap.oficina.core.gateway.TokenAprovacaoGateway;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -58,7 +59,7 @@ class OrdemServicoServiceUnitTest {
     @Mock EntityManager entityManager;
     @Mock ClienteService clienteService;
     @Mock VeiculoService veiculoService;
-    @Mock AprovacaoTokenService aprovacaoTokenService;
+    @Mock TokenAprovacaoGateway aprovacaoTokenService;
     @Mock NotificacaoAprovacaoGateway notificacaoAprovacaoService;
     @InjectMocks OrdemServicoService osService;
 

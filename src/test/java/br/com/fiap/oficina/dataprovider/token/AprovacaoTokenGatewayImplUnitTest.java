@@ -1,4 +1,4 @@
-package br.com.fiap.oficina.service;
+package br.com.fiap.oficina.dataprovider.token;
 
 import br.com.fiap.oficina.core.domain.exception.TokenAprovacaoInvalidoException;
 import com.nimbusds.jose.jwk.JWK;
@@ -26,9 +26,9 @@ import java.time.temporal.ChronoUnit;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-class AprovacaoTokenServiceUnitTest {
+class AprovacaoTokenGatewayImplUnitTest {
 
-    private AprovacaoTokenService service;
+    private AprovacaoTokenGatewayImpl gateway;
 
     @BeforeEach
     void setup() throws Exception {
@@ -42,16 +42,16 @@ class AprovacaoTokenServiceUnitTest {
         JWK jwk = new RSAKey.Builder(publicKey).privateKey(privateKey).build();
         JwtEncoder jwtEncoder = new NimbusJwtEncoder(new ImmutableJWKSet<>(new JWKSet(jwk)));
 
-        service = new AprovacaoTokenService(jwtEncoder, jwtDecoder);
-        ReflectionTestUtils.setField(service, "validadeDias", 7L);
+        gateway = new AprovacaoTokenGatewayImpl(jwtEncoder, jwtDecoder);
+        ReflectionTestUtils.setField(gateway, "validadeDias", 7L);
     }
 
     @Test
     @DisplayName("Deve gerar e validar token de aprovação corretamente")
     void deveGerarEValidarTokenAprovado() {
-        String token = service.gerarToken(42L, true);
+        String token = gateway.gerarToken(42L, true);
 
-        var decodificado = service.validar(token);
+        var decodificado = gateway.validar(token);
 
         assertThat(decodificado.osId()).isEqualTo(42L);
         assertThat(decodificado.aprovado()).isTrue();
@@ -60,9 +60,9 @@ class AprovacaoTokenServiceUnitTest {
     @Test
     @DisplayName("Deve gerar e validar token de recusa corretamente")
     void deveGerarEValidarTokenRecusado() {
-        String token = service.gerarToken(7L, false);
+        String token = gateway.gerarToken(7L, false);
 
-        var decodificado = service.validar(token);
+        var decodificado = gateway.validar(token);
 
         assertThat(decodificado.osId()).isEqualTo(7L);
         assertThat(decodificado.aprovado()).isFalse();
@@ -71,7 +71,7 @@ class AprovacaoTokenServiceUnitTest {
     @Test
     @DisplayName("Deve lançar exceção para token adulterado/assinatura inválida")
     void deveLancarExcecaoParaTokenInvalido() {
-        assertThatThrownBy(() -> service.validar("token.invalido.aqui"))
+        assertThatThrownBy(() -> gateway.validar("token.invalido.aqui"))
                 .isInstanceOf(TokenAprovacaoInvalidoException.class);
     }
 
@@ -79,13 +79,12 @@ class AprovacaoTokenServiceUnitTest {
     @DisplayName("Deve lançar exceção para token expirado")
     void deveLancarExcecaoParaTokenExpirado() {
         Instant passado = Instant.now().minus(10, ChronoUnit.DAYS);
-        ReflectionTestUtils.setField(service, "clock", Clock.fixed(passado, ZoneOffset.UTC));
-        // validade padrão de 7 dias a partir de um instante 10 dias atrás -> expirou há 3 dias
-        String token = service.gerarToken(1L, true);
+        ReflectionTestUtils.setField(gateway, "clock", Clock.fixed(passado, ZoneOffset.UTC));
+        String token = gateway.gerarToken(1L, true);
 
-        ReflectionTestUtils.setField(service, "clock", Clock.systemUTC());
+        ReflectionTestUtils.setField(gateway, "clock", Clock.systemUTC());
 
-        assertThatThrownBy(() -> service.validar(token))
+        assertThatThrownBy(() -> gateway.validar(token))
                 .isInstanceOf(TokenAprovacaoInvalidoException.class)
                 .hasMessageContaining("expirado");
     }

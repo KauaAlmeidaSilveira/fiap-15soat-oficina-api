@@ -4,7 +4,7 @@ import br.com.fiap.oficina.dto.request.AprovarOsRequest;
 import br.com.fiap.oficina.core.domain.exception.RecursoNaoEncontradoException;
 import br.com.fiap.oficina.core.domain.exception.RegraDeNegocioException;
 import br.com.fiap.oficina.core.domain.exception.TokenAprovacaoInvalidoException;
-import br.com.fiap.oficina.service.AprovacaoTokenService;
+import br.com.fiap.oficina.core.gateway.TokenAprovacaoGateway;
 import br.com.fiap.oficina.service.OrdemServicoService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -21,7 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 @Tag(name = "Aprovação por E-mail", description = "Endpoint público acionado pelos links do e-mail de aprovação de orçamento")
 public class AprovacaoPublicaController {
 
-    private final AprovacaoTokenService tokenService;
+    private final TokenAprovacaoGateway tokenService;
     private final OrdemServicoService osService;
 
     @GetMapping(value = "/aprovacao-os", produces = MediaType.TEXT_HTML_VALUE)
