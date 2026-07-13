@@ -30,6 +30,16 @@ spec:
                 secretKeyRef:
                   name: oficina-api-secrets
                   key: DB_PASSWORD
+            - name: GMAIL_SMTP_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: oficina-api-secrets
+                  key: GMAIL_SMTP_USERNAME
+            - name: GMAIL_SMTP_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: oficina-api-secrets
+                  key: GMAIL_SMTP_PASSWORD
           volumeMounts:
             - name: jwt-keys
               mountPath: /app/keys

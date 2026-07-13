@@ -35,9 +35,16 @@ Crie o Secret diretamente no cluster (sem passar pelo arquivo YAML):
 kubectl create secret generic oficina-api-secrets \
   --namespace oficina \
   --from-literal=DB_PASSWORD='<senha-real-do-rds>' \
+  --from-literal=GMAIL_SMTP_USERNAME='<endereco-gmail-remetente>' \
+  --from-literal=GMAIL_SMTP_PASSWORD='<app-password-do-gmail>' \
   --from-file=jwt.private.key=/tmp/jwt.private.key \
   --from-file=jwt.public.key=/tmp/jwt.public.key
 ```
+
+> `GMAIL_SMTP_USERNAME`/`GMAIL_SMTP_PASSWORD` alimentam o envio real do e-mail de aprovação de
+> orçamento (`NotificacaoAprovacaoSmtpService`, ativo só no profile `default`). A senha é uma
+> App Password do Gmail (Conta Google → Segurança → Verificação em duas etapas → Senhas de app),
+> nunca a senha normal da conta.
 
 > Isso precisa ser feito **antes** de aplicar o `deployment.yaml`, já que ele referencia o Secret.
 
