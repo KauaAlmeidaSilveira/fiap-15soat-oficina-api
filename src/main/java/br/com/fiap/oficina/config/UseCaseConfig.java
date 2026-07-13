@@ -1,12 +1,16 @@
 package br.com.fiap.oficina.config;
 
 import br.com.fiap.oficina.core.gateway.ClienteGateway;
+import br.com.fiap.oficina.core.gateway.CriptografiaSenhaGateway;
 import br.com.fiap.oficina.core.gateway.EstoqueGateway;
 import br.com.fiap.oficina.core.gateway.NotificacaoAprovacaoGateway;
 import br.com.fiap.oficina.core.gateway.OrdemServicoGateway;
 import br.com.fiap.oficina.core.gateway.ProdutoGateway;
 import br.com.fiap.oficina.core.gateway.TokenAprovacaoGateway;
+import br.com.fiap.oficina.core.gateway.TokenAutenticacaoGateway;
+import br.com.fiap.oficina.core.gateway.UsuarioGateway;
 import br.com.fiap.oficina.core.gateway.VeiculoGateway;
+import br.com.fiap.oficina.core.usecase.AuthUseCase;
 import br.com.fiap.oficina.core.usecase.ClienteUseCase;
 import br.com.fiap.oficina.core.usecase.OrdemServicoUseCase;
 import br.com.fiap.oficina.core.usecase.ProdutoUseCase;
@@ -41,5 +45,11 @@ public class UseCaseConfig {
             @Value("${app.public-base-url:http://localhost:8080}") String publicBaseUrl) {
         return new OrdemServicoUseCase(ordemServicoGateway, clienteGateway, veiculoGateway, produtoGateway,
                 estoqueGateway, tokenAprovacaoGateway, notificacaoAprovacaoGateway, publicBaseUrl);
+    }
+
+    @Bean
+    public AuthUseCase authUseCase(UsuarioGateway usuarioGateway, TokenAutenticacaoGateway tokenAutenticacaoGateway,
+                                   CriptografiaSenhaGateway criptografiaSenhaGateway) {
+        return new AuthUseCase(usuarioGateway, tokenAutenticacaoGateway, criptografiaSenhaGateway);
     }
 }

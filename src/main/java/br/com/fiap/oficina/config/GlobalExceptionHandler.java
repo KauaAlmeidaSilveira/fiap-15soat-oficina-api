@@ -1,5 +1,6 @@
 package br.com.fiap.oficina.config;
 
+import br.com.fiap.oficina.core.domain.exception.CredenciaisInvalidasException;
 import br.com.fiap.oficina.core.domain.exception.RecursoNaoEncontradoException;
 import br.com.fiap.oficina.core.domain.exception.RegraDeNegocioException;
 import lombok.extern.slf4j.Slf4j;
@@ -10,7 +11,6 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 import java.util.Map;
@@ -62,10 +62,10 @@ public class GlobalExceptionHandler {
         return pd;
     }
 
-    @ExceptionHandler(ResponseStatusException.class)
-    public ProblemDetail handleResponseStatus(ResponseStatusException ex) {
-        log.warn("Resposta com status {}: {}", ex.getStatusCode(), ex.getReason());
-        ProblemDetail pd = ProblemDetail.forStatusAndDetail(ex.getStatusCode(), ex.getReason() != null ? ex.getReason() : ex.getMessage());
+    @ExceptionHandler(CredenciaisInvalidasException.class)
+    public ProblemDetail handleCredenciaisInvalidas(CredenciaisInvalidasException ex) {
+        log.warn("Falha de autenticação: {}", ex.getMessage());
+        ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, ex.getMessage());
         pd.setTitle("Erro de autenticação");
         pd.setProperty("timestamp", LocalDateTime.now());
         return pd;
