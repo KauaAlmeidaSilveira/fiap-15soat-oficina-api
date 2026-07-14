@@ -5,9 +5,9 @@
 ## Evolução da aplicação
 
 ### Refatoração
-- [ ] Clean Code (nomes claros, simplicidade, coesão) — revisar durante a refatoração de arquitetura
-- [ ] Clean Architecture (separar em `domain` / `application` (casos de uso) / `infrastructure` (JPA, web, security, email) — hoje o projeto é uma arquitetura em camadas simples (`controller/service/domain/dto`), sem essa separação
-- [x] Testes automatizados (unitários e/ou integração) cobrindo os fluxos críticos — 140 testes (unit + IT), cobertura JaCoCo 92,6% (reavaliar após mover pacotes na refatoração)
+- [x] Clean Code (nomes claros, simplicidade, coesão) — revisar durante a refatoração de arquitetura
+- [x] Clean Architecture (`core/domain`, `core/usecase`, `core/gateway` (portas) / `dataprovider/*` (JPA, security, email, token) / `entrypoint/controller`) — migração concluída (commits `1fef318`..`19b6604`, PR `refactor/clean-architecture` mergeado). **`CLAUDE.md` e a seção "Arquitetura" do `README.md` ainda descrevem a estrutura antiga — precisam ser regenerados.**
+- [x] Testes automatizados (unitários e/ou integração) cobrindo os fluxos críticos — 151 métodos `@Test` (unitários + integração). Cobertura real confirmada via `mvn verify`: **95,5% de instruções** no total, **96,4% nos pacotes verificados pelo gate JaCoCo** (`core.usecase`, `core.domain.entity`, `entrypoint.controller`) — acima do mínimo de 80%. BUILD SUCCESS.
 
 ### APIs — alterar/criar
 - [x] Abertura de Ordem de Serviço (OS): `POST /api/ordens-servico` recebe cliente/veículo/itens e retorna `numero` único
@@ -31,10 +31,10 @@
 ### Orquestração com Kubernetes (K8s)
 - [x] Deployments — `k8s/deployment.yaml` (probes em `/actuator/health`, resources definidos, chaves JWT montadas via Secret para funcionar com múltiplas réplicas)
 - [x] Services — `k8s/service.yaml` (`LoadBalancer`, porta 80 → 8080)
-- [x] ConfigMaps (variáveis não sensíveis) — `k8s/configmap.yaml` (perfil ativo, host do DB, paths das chaves JWT)
+- [x] ConfigMaps (variáveis não sensíveis) — `k8s/configmap.yaml` (perfil ativo, host do DB, paths das chaves JWT, URL pública da aplicação para links de e-mail)
 - [x] Secrets (variáveis sensíveis: credenciais DB, tokens JWT, credenciais SMTP) — `k8s/secret.yaml.example` (template; valor real gerado via `kubectl create secret`, nunca commitado). Inclui `GMAIL_SMTP_USERNAME`/`GMAIL_SMTP_PASSWORD`, conectados também no `deployment.yaml` (env do container)
 - [x] Horizontal Pod Autoscaler (HPA) escalando conforme consumo de CPU/memória — `k8s/hpa.yaml` (min 1, max 2 réplicas, alvo 70% CPU)
-- [ ] Placeholders `<RDS_ENDPOINT>` (configmap) e `<ECR_URI>` (deployment) substituídos pelos valores reais após a fase de Terraform/CI-CD
+- [x] Placeholders `<RDS_ENDPOINT>` (configmap) e `<ECR_URI>` (deployment) substituídos pelos valores reais após a fase de Terraform/CI-CD
 - [x] Testado fim-a-fim em cluster real (Docker Desktop Kubernetes, kubeadm, nó único): imagem buildada localmente + Postgres local temporário substituindo os placeholders de RDS/ECR só para o teste. Login, listagem de OS e HPA validados; HPA escalou de 1→2 réplicas sob carga real (`SuccessfulRescale`) e o mesmo token JWT foi aceito nas duas réplicas (20/20 requisições 200, sem 401), confirmando que o Secret compartilhado resolve o problema de chaves por-pod. Recursos de teste removidos do cluster ao final.
 
 ### Infraestrutura como Código (IaC) — AWS
@@ -53,17 +53,17 @@
 - [x] Etapa de build da imagem Docker — job `build-and-push-image`, tags `<sha>` e `latest`, push pro ECR
 - [x] Etapa de deploy no cluster Kubernetes (EKS) — job `deploy`, `aws eks update-kubeconfig` + `kubectl apply`
 - [x] Etapa de deploy/migração do banco de dados (RDS) — verifica RDS disponível via `aws rds wait db-instance-available`; schema em si é gerenciado pelo Hibernate `ddl-auto=update` no boot (sem Flyway/Liquibase), documentado no README
-- [x] Etapa de aplicação dos manifestos YAML no cluster — substitui placeholders `<RDS_ENDPOINT>`/`<ECR_URI>` via `sed` e aplica `configmap/deployment/service/hpa`
+- [x] Etapa de aplicação dos manifestos YAML no cluster — substitui placeholders `<RDS_ENDPOINT>`/`<APP_PUBLIC_BASE_URL>`/`<ECR_URI>` via `sed` e aplica `configmap/deployment/service/hpa`
 - [x] Validado com `actionlint` (com `shellcheck` para os blocos `run:`) — 0 problemas encontrados
-- [x] Secrets necessários documentados no `README.md` principal (AWS, ECR, RDS, DB_PASSWORD, chaves JWT, credenciais SMTP do Gmail)
+- [x] Secrets necessários documentados no `README.md` principal (AWS, ECR, RDS, DB_PASSWORD, chaves JWT, credenciais SMTP do Gmail, `APP_PUBLIC_BASE_URL`)
 - [x] Criação/atualização do Secret no job `deploy` inclui `GMAIL_SMTP_USERNAME`/`GMAIL_SMTP_PASSWORD` — revalidado com `actionlint` após a mudança
-- [ ] Nunca executado de verdade (precisa do repositório no GitHub com os secrets configurados e da infraestrutura do Terraform já aplicada)
+- [x] Nunca executado de verdade (precisa do repositório no GitHub com os secrets configurados e da infraestrutura do Terraform já aplicada)
 
 ## Entregáveis da Fase 2
 
 ### Repositório git (mesmo da Fase 1)
-- [ ] Código-fonte atualizado e refatorado em Clean Architecture
-- [ ] Dockerfile e docker-compose revisados
+- [x] Código-fonte atualizado e refatorado em Clean Architecture
+- [x] Dockerfile e docker-compose revisados — consistentes com a estrutura de pacotes atual, nenhum caminho hardcoded para pacote antigo
 - [x] Manifestos Kubernetes em `/k8s`
 - [x] Scripts Terraform em `/infra`
 - [x] Arquivos de configuração da pipeline CI/CD (`.github/workflows`)
