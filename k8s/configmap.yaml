@@ -11,3 +11,4 @@ data:
   # apenas o caminho do arquivo; o conteúdo sensível vem do volume montado a partir do Secret.
   JWT_PUBLIC_KEY: "file:/app/keys/jwt.public.key"
   JWT_PRIVATE_KEY: "file:/app/keys/jwt.private.key"
+  APP_PUBLIC_BASE_URL: "<APP_PUBLIC_BASE_URL>"

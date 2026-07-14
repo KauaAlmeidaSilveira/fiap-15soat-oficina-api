@@ -34,6 +34,7 @@ services:
       JWT_PRIVATE_KEY: file:/app/keys/jwt.private.key
       GMAIL_SMTP_USERNAME: ${GMAIL_SMTP_USERNAME:-}
       GMAIL_SMTP_PASSWORD: ${GMAIL_SMTP_PASSWORD:-}
+      APP_PUBLIC_BASE_URL: ${APP_PUBLIC_BASE_URL:-http://localhost:8080}
     depends_on:
       postgres:
         condition: service_healthy

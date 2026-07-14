@@ -116,9 +116,10 @@ jobs:
           RDS_ENDPOINT: ${{ secrets.RDS_ENDPOINT }}
           ECR_REPOSITORY_URL: ${{ secrets.ECR_REPOSITORY_URL }}
           IMAGE_TAG: ${{ needs.build-and-push-image.outputs.image_tag }}
+          APP_PUBLIC_BASE_URL: ${{ secrets.APP_PUBLIC_BASE_URL }}
         run: |
           mkdir -p /tmp/k8s-rendered
-          sed "s|<RDS_ENDPOINT>|$RDS_ENDPOINT|" k8s/configmap.yaml > /tmp/k8s-rendered/configmap.yaml
+          sed "s|<RDS_ENDPOINT>|$RDS_ENDPOINT|;s|<APP_PUBLIC_BASE_URL>|$APP_PUBLIC_BASE_URL|" k8s/configmap.yaml > /tmp/k8s-rendered/configmap.yaml
           sed "s|\"<ECR_URI>/oficina-api:latest\"|\"$ECR_REPOSITORY_URL:$IMAGE_TAG\"|" k8s/deployment.yaml > /tmp/k8s-rendered/deployment.yaml
 
           kubectl apply -f /tmp/k8s-rendered/configmap.yaml
