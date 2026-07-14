@@ -126,5 +126,8 @@ jobs:
           kubectl apply -f k8s/service.yaml
           kubectl apply -f k8s/hpa.yaml
 
+      - name: Forcar rollout dos pods
+        run: kubectl rollout restart deployment/oficina-api -n oficina
+
       - name: Aguardar rollout
         run: kubectl rollout status deployment/oficina-api -n oficina --timeout=180s
