@@ -1,6 +1,6 @@
 package br.com.fiap.oficina.dto.request;
 
-import br.com.fiap.oficina.domain.enums.TipoDocumento;
+import br.com.fiap.oficina.core.domain.enums.TipoDocumento;
 import br.com.fiap.oficina.validation.CpfOuCnpj;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;

@@ -173,9 +173,9 @@
                                 <rule>
                                     <element>PACKAGE</element>
                                     <includes>
-                                        <include>br.com.fiap.oficina.application.service</include>
-                                        <include>br.com.fiap.oficina.domain.model</include>
-                                        <include>br.com.fiap.oficina.api.controller</include>
+                                        <include>br.com.fiap.oficina.core.usecase</include>
+                                        <include>br.com.fiap.oficina.core.domain.entity</include>
+                                        <include>br.com.fiap.oficina.entrypoint.controller</include>
                                     </includes>
                                     <limits>
                                         <limit>

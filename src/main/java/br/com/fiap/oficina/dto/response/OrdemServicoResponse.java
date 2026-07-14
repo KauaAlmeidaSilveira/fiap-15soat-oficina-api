@@ -1,6 +1,6 @@
 package br.com.fiap.oficina.dto.response;
 
-import br.com.fiap.oficina.domain.enums.StatusOS;
+import br.com.fiap.oficina.core.domain.enums.StatusOS;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;

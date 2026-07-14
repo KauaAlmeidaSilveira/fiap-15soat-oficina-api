@@ -1,10 +1,10 @@
 package br.com.fiap.oficina.controller;
 
-import br.com.fiap.oficina.domain.enums.TipoDocumento;
+import br.com.fiap.oficina.core.domain.enums.TipoDocumento;
 import br.com.fiap.oficina.dto.request.ClienteRequest;
 import br.com.fiap.oficina.dto.request.OrdemServicoRequest;
 import br.com.fiap.oficina.dto.request.VeiculoRequest;
-import br.com.fiap.oficina.service.AprovacaoTokenService;
+import br.com.fiap.oficina.core.gateway.TokenAprovacaoGateway;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -32,7 +32,7 @@ class AprovacaoPublicaControllerIT {
 
     @Autowired MockMvc mockMvc;
     @Autowired ObjectMapper objectMapper;
-    @Autowired AprovacaoTokenService tokenService;
+    @Autowired TokenAprovacaoGateway tokenService;
 
     private Long clienteId;
     private Long veiculoId;

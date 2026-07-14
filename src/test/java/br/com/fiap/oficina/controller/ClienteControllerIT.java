@@ -1,6 +1,6 @@
 package br.com.fiap.oficina.controller;
 
-import br.com.fiap.oficina.domain.enums.TipoDocumento;
+import br.com.fiap.oficina.core.domain.enums.TipoDocumento;
 import br.com.fiap.oficina.dto.request.ClienteRequest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.DisplayName;
