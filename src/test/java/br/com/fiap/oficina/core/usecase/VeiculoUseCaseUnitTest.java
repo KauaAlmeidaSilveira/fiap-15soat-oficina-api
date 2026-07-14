@@ -145,4 +145,29 @@ class VeiculoUseCaseUnitTest {
         assertThat(lista).hasSize(1);
         assertThat(lista.get(0).getPlaca()).isEqualTo("ABC1234");
     }
+
+    @Test
+    @DisplayName("Deve atualizar veículo com nova placa disponível")
+    void deveAtualizarVeiculoComPlacaDiferente() {
+        when(veiculoGateway.buscarPorId(1L)).thenReturn(Optional.of(veiculoExistente));
+        when(veiculoGateway.existePorPlaca("XYZ9999")).thenReturn(false);
+        Veiculo atualizado = Veiculo.builder().id(1L).placa("XYZ9999").marca("Toyota").modelo("Camry").ano(2022).cor("Branco").build();
+        when(veiculoGateway.salvar(any(Veiculo.class))).thenReturn(atualizado);
+
+        Veiculo resultado = veiculoUseCase.atualizar(1L, novoVeiculo("XYZ9999"));
+
+        assertThat(resultado.getPlaca()).isEqualTo("XYZ9999");
+        verify(veiculoGateway).salvar(any(Veiculo.class));
+    }
+
+    @Test
+    @DisplayName("Deve lançar exceção ao atualizar veículo com placa já usada por outro")
+    void deveLancarExcecaoAoAtualizarComPlacaDuplicada() {
+        when(veiculoGateway.buscarPorId(1L)).thenReturn(Optional.of(veiculoExistente));
+        when(veiculoGateway.existePorPlaca("XYZ9999")).thenReturn(true);
+
+        assertThatThrownBy(() -> veiculoUseCase.atualizar(1L, novoVeiculo("XYZ9999")))
+                .isInstanceOf(RegraDeNegocioException.class)
+                .hasMessageContaining("Placa já cadastrada");
+    }
 }

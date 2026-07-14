@@ -186,6 +186,13 @@ class ProdutoControllerIT {
     }
 
     @Test
+    @DisplayName("Deve listar todos os produtos sem filtro")
+    void deveListarTodosSemFiltro() throws Exception {
+        mockMvc.perform(get("/api/produtos"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
     @DisplayName("Deve listar produtos com filtro por tipo")
     void deveListarPorTipo() throws Exception {
         mockMvc.perform(get("/api/produtos?tipo=PECA"))
