@@ -71,7 +71,7 @@
 ### README.md atualizado
 - [x] Descrição da solução e dos objetivos desta fase — `## Sobre o Projeto` atualizado com Clean Architecture e feature de notificação por e-mail
 - [ ] Desenho da arquitetura proposta
-  - [x] Componentes da aplicação (Clean Architecture) — seção `## Arquitetura` reescrita com estrutura real de pacotes (`core/dataprovider/entrypoint`)
+  - [ ] Componentes da aplicação (Clean Architecture)
   - [ ] Infraestrutura provisionada (AWS: EKS, RDS, etc.)
   - [ ] Fluxo de deploy (CI/CD → Docker → Terraform → K8s)
 - [x] Instruções de execução local (já existiam da Fase 1)
