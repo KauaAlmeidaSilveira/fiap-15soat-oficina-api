@@ -1,13 +1,17 @@
 # Oficina Mecânica — Sistema Integrado de Atendimento
 
 > Tech Challenge — FIAP SOAT Fase 2
-> Back-end monolítico com Spring Boot 3.2 · Java 21 · PostgreSQL / H2
+> Spring Boot 3.2 · Java 21 · Clean Architecture · PostgreSQL / H2
 
 ---
 
 ## Sobre o Projeto
 
-Sistema back-end para uma oficina mecânica de médio porte, com gestão completa de ordens de serviço, clientes, veículos, peças, serviços e controle de estoque. Todos os endpoints administrativos são protegidos por autenticação JWT (RSA-2048) com controle de acesso por role.
+Sistema back-end para uma oficina mecânica de médio porte com gestão completa de ordens de serviço, clientes, veículos, peças, serviços e controle de estoque. O projeto foi construído seguindo **Clean Architecture** — regras de negócio isoladas em casos de uso (`core/usecase`), independentes de framework, banco e transporte HTTP.
+
+Além do CRUD e do fluxo de OS, o sistema conta com **notificação por e-mail ao cliente**: ao avançar para `AGUARDANDO_APROVACAO`, a API envia automaticamente um e-mail HTML com dois botões — aprovar ou recusar o orçamento. Cada botão carrega um token JWT de uso único (assinado com o mesmo par de chaves RSA da autenticação); o cliente clica no link, o endpoint público `/aprovacao-os` valida o token, aplica a transição de status e devolve uma página de confirmação estilizada.
+
+Todos os endpoints administrativos são protegidos por autenticação JWT (RSA-2048) com controle de acesso por role.
 
 ### Decisão de banco de dados
 
@@ -24,22 +28,30 @@ A troca é transparente: basta definir `SPRING_PROFILES_ACTIVE` na variável de 
 
 ## Arquitetura
 
-O projeto segue arquitetura em camadas (monolito):
+O projeto segue **Clean Architecture**: dependências sempre apontam para dentro — `entrypoint` e `dataprovider` dependem de `core`; `core` não conhece nenhum dos dois.
 
 ```
 br.com.fiap.oficina
-├── controller/          # Controllers REST — entrada HTTP
-├── service/             # Regras de negócio e casos de uso
-├── domain/
-│   ├── model/           # Entidades JPA (domínio)
-│   ├── enums/           # StatusOS, TipoProduto, TipoDocumento, TipoMovimentacao
-│   └── repository/      # Interfaces Spring Data JPA
+├── core/
+│   ├── domain/
+│   │   ├── entity/      # Entidades de domínio (sem anotações JPA)
+│   │   ├── enums/       # StatusOS, TipoProduto, TipoDocumento, TipoMovimentacao
+│   │   └── exception/   # Exceções de domínio (RecursoNaoEncontrado, RegraDeNegocio…)
+│   ├── gateway/         # Interfaces (portas de saída) — ClienteGateway, EstoqueGateway…
+│   └── usecase/         # Casos de uso — única camada com regras de negócio
+├── dataprovider/        # Adaptadores de saída
+│   ├── gateway/         # Implementações JPA dos gateways
+│   ├── notificacao/     # SMTP (produção) e Log (dev/test) de e-mail
+│   ├── persistence/     # Entidades JPA, repositórios Spring Data, mappers MapStruct
+│   ├── security/        # BCrypt (CriptografiaSenhaGatewayImpl)
+│   └── token/           # JWT de aprovação (AprovacaoTokenGatewayImpl) e autenticação
+├── entrypoint/
+│   └── controller/      # Controllers REST + mappers MapStruct DTO ↔ domínio
+├── config/              # SecurityConfig, SwaggerConfig, UseCaseConfig, DataLoader
 ├── dto/
 │   ├── request/         # Records de entrada com validação (@Valid)
 │   └── response/        # Records de saída
-├── validation/          # Validadores customizados (CPF/CNPJ)
-├── handler/             # GlobalExceptionHandler + exceções de domínio
-└── config/              # SecurityConfig, CorsConfig, SwaggerConfig, DataLoader
+└── validation/          # Validadores customizados (CPF/CNPJ)
 ```
 
 ### Entidades do domínio
@@ -59,7 +71,11 @@ br.com.fiap.oficina
 
 ```
 RECEBIDA → EM_DIAGNOSTICO → AGUARDANDO_APROVACAO → EM_EXECUCAO → FINALIZADA → ENTREGUE
+                                      │
+                                      └→ REPROVADA
 ```
+
+Ao entrar em `AGUARDANDO_APROVACAO` o sistema envia automaticamente um e-mail ao cliente com os links de aprovação e recusa.
 
 ---
 
@@ -149,7 +165,7 @@ Pipeline em [`.github/workflows/ci-cd.yml`](.github/workflows/ci-cd.yml), com 3 
 
 1. **build-and-test** (todo push/PR) — gera as chaves JWT (necessárias só para os testes), roda `mvn verify` (build + testes + gate de cobertura JaCoCo) e publica o relatório de testes como artefato.
 2. **build-and-push-image** (só em push) — autentica na AWS, faz login no ECR e builda/publica a imagem Docker com duas tags: o SHA curto do commit e `latest`.
-3. **deploy** (só em push) — aponta o `kubectl` para o cluster EKS, confirma que o RDS está disponível (o schema em si é gerenciado pelo Hibernate via `ddl-auto=update` no boot da aplicação — não há migration tool dedicado), cria/atualiza o Secret da aplicação a partir dos secrets do GitHub, substitui os placeholders `<RDS_ENDPOINT>`/`<ECR_URI>` nos manifestos e aplica tudo em `/k8s`.
+3. **deploy** (só em push) — aponta o `kubectl` para o cluster EKS, confirma que o RDS está disponível (o schema em si é gerenciado pelo Hibernate via `ddl-auto=update` no boot da aplicação — não há migration tool dedicado), cria/atualiza o Secret da aplicação a partir dos secrets do GitHub, substitui os placeholders `<RDS_ENDPOINT>`/`<APP_PUBLIC_BASE_URL>`/`<ECR_URI>` nos manifestos e aplica tudo em `/k8s`.
 
 Pré-requisito: os recursos do Terraform (`/infra`) já precisam existir (EKS, RDS, ECR criados via `terraform apply`) antes desse pipeline rodar com sucesso — ele não provisiona infraestrutura, só builda/testa/publica/faz deploy.
 
@@ -164,6 +180,7 @@ Pré-requisito: os recursos do Terraform (`/infra`) já precisam existir (EKS, R
 | `DB_PASSWORD` | Mesma senha usada no `terraform.tfvars` | Definida por você |
 | `JWT_PRIVATE_KEY` / `JWT_PUBLIC_KEY` | Conteúdo (PEM) do par de chaves RSA — o mesmo par para todas as réplicas, ver [`k8s/README.md`](k8s/README.md) | Gerado uma vez via `openssl` |
 | `GMAIL_SMTP_USERNAME` / `GMAIL_SMTP_PASSWORD` | Endereço Gmail remetente e sua App Password | Conta Google → Segurança → Verificação em duas etapas → Senhas de app |
+| `APP_PUBLIC_BASE_URL` | URL pública da aplicação usada nos links de aprovação do e-mail (ex: `http://<elb-dns>`) | `kubectl get service oficina-api -n oficina -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'` após o primeiro deploy |
 
 ---
 
@@ -203,30 +220,40 @@ mvn verify
 
 ### Cobertura atual
 
-| Pacote | Cobertura |
-|--------|-----------|
-| `config` | 100% |
-| `controller` | 94,8% |
-| `domain.enums` | 100% |
-| `domain.model` | 96,5% |
-| `dto.request` | 100% |
-| `dto.response` | 95,5% |
-| `handler` | 98,2% |
-| `handler.exception` | 100% |
-| `service` | 90,5% |
-| `validation` | 61,2% |
-| **Total** | **92,6%** |
+Números confirmados via `mvn verify` (gate JaCoCo verificado nos pacotes `core.usecase`, `core.domain.entity` e `entrypoint.controller`):
 
-Cobertura mínima exigida pelo gate do JaCoCo: **80%**. 140 testes no total (unitários + integração).
+| Pacote | Cobertura de instruções |
+|--------|------------------------|
+| `config` | 100% |
+| `core.domain.entity` | 100% |
+| `core.domain.enums` | 100% |
+| `core.domain.exception` | 100% |
+| `core.gateway` | 100% |
+| `core.usecase` | 95% |
+| `dataprovider.gateway` | 93% |
+| `dataprovider.notificacao` | 97% |
+| `dataprovider.persistence.entity` | 97% |
+| `dataprovider.persistence.mapper` | 92% |
+| `dataprovider.security` | 100% |
+| `dataprovider.token` | 95% |
+| `dto.request` | 100% |
+| `dto.response` | 100% |
+| `entrypoint.controller` | 98% |
+| `entrypoint.controller.mapper` | 96% |
+| `validation` | 61% |
+| **Total** | **95,5%** |
+
+Cobertura mínima exigida pelo gate do JaCoCo: **80%**. 151 testes no total (unitários + integração).
 
 ### Tipos de testes
 
 | Classe | Tipo |
 |--------|------|
-| `*ServiceUnitTest` | Testes unitários com Mockito |
+| `*UseCaseUnitTest` | Testes unitários dos casos de uso com Mockito |
 | `*ControllerIT` | Testes de integração com `@SpringBootTest` + MockMvc |
-| `OrdemServicoUnitTest`, `OsItemUnitTest`, `SaldoEstoqueUnitTest` | Testes de domínio |
-| `AprovacaoTokenServiceUnitTest` | Testes do token JWT de aprovação por e-mail |
+| `OrdemServicoDomainUnitTest`, `OsItemDomainUnitTest` | Testes de entidades de domínio |
+| `AprovacaoTokenGatewayImplUnitTest` | Testes do gateway de token JWT de aprovação |
+| `NotificacaoAprovacaoSmtpServiceUnitTest` | Testes do serviço de envio de e-mail |
 | `GlobalExceptionHandlerUnitTest` | Testes do exception handler |
 
 ---
@@ -357,10 +384,14 @@ fiap-15soat-oficina-api/
 │   │       └── application-dev.properties    # Perfil dev (H2)
 │   └── test/
 │       └── java/br/com/fiap/oficina/
-│           ├── controller/   # Testes de integração (*ControllerIT)
-│           ├── service/      # Testes unitários de serviço (*ServiceTest)
-│           ├── domain/       # Testes de domínio
-│           └── handler/      # Testes do exception handler
+│           ├── controller/             # Testes de integração (*ControllerIT)
+│           ├── config/                 # GlobalExceptionHandlerUnitTest
+│           ├── core/
+│           │   ├── domain/entity/      # Testes de entidades de domínio
+│           │   └── usecase/            # Testes unitários dos casos de uso
+│           └── dataprovider/
+│               ├── notificacao/        # NotificacaoAprovacaoSmtpServiceUnitTest
+│               └── token/              # AprovacaoTokenGatewayImplUnitTest
 ├── k8s/                       # Manifestos Kubernetes (deploy no EKS) — ver k8s/README.md
 ├── infra/                     # Terraform (EKS + RDS + ECR na AWS) — ver infra/README.md
 ├── Dockerfile
@@ -382,6 +413,7 @@ fiap-15soat-oficina-api/
 | PostgreSQL | 16 | Banco em produção |
 | H2 | — | Banco em desenvolvimento/testes |
 | springdoc-openapi | 2.5.0 | Swagger UI / OpenAPI 3 |
+| MapStruct | 1.5.5 | Mapeamento entre entidades JPA e entidades de domínio / DTOs |
 | Lombok | — | Redução de boilerplate |
 | JaCoCo | 0.8.11 | Cobertura de testes |
 | JUnit 5 + Mockito | — | Testes |
