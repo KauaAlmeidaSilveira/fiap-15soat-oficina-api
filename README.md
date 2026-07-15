@@ -30,6 +30,85 @@ A troca é transparente: basta definir `SPRING_PROFILES_ACTIVE` na variável de 
 
 O projeto segue **Clean Architecture**: dependências sempre apontam para dentro — `entrypoint` e `dataprovider` dependem de `core`; `core` não conhece nenhum dos dois.
 
+### Diagrama de componentes
+
+```mermaid
+%%{init: {'theme':'base', 'themeVariables': {'primaryColor':'#EDEAE2','primaryTextColor':'#1E2430','primaryBorderColor':'#C9C4B8','lineColor':'#1E2430','clusterBkg':'#FBFAF6','clusterBorder':'#C9C4B8'}}}%%
+flowchart LR
+    HTTP(["Requisição HTTP"]) --> C
+
+    subgraph L1["ENTRYPOINT — Adaptadores de Entrada"]
+        direction TB
+        C["Controllers<br/>Auth · Cliente · Veiculo<br/>OrdemServico · Produto<br/>AprovacaoPublica"]
+        DM["DTO Mappers (MapStruct)<br/>ClienteDtoMapper · VeiculoDtoMapper<br/>OrdemServicoDtoMapper · ProdutoDtoMapper"]
+        DTO["DTOs<br/>Request / Response"]
+    end
+
+    subgraph L2["CORE — Use Cases (regras de aplicação)"]
+        direction TB
+        UC["Use Cases<br/>AuthUseCase · ClienteUseCase<br/>VeiculoUseCase · OrdemServicoUseCase<br/>ProdutoUseCase"]
+    end
+
+    subgraph L3["CORE — Domain + Gateways (regras da empresa · sem frameworks)"]
+        direction TB
+        DOM["Domain Entities (Java puro)<br/>Cliente · Veiculo · OrdemServico · OsItem<br/>Produto · MovimentacaoEstoque · Usuario"]
+        ENUM["Enums<br/>StatusOS · TipoDocumento<br/>TipoProduto · TipoMovimentacao"]
+        EXC["Exceptions<br/>RecursoNaoEncontrado · RegraDeNegocio<br/>CredenciaisInvalidas · TokenAprovacaoInvalido"]
+        GW["Gateways — interfaces/portas<br/>Cliente · Veiculo · OrdemServico · Produto<br/>Estoque · Usuario · CriptografiaSenha<br/>TokenAutenticacao · TokenAprovacao · NotificacaoAprovacao"]
+    end
+
+    subgraph L4["DATAPROVIDER — Adaptadores de Saída (frameworks e drivers)"]
+        direction TB
+        GWI["Gateway Implementations (JPA)"]
+        PERS["Persistence<br/>JPA Entities + MapStruct + 10 Spring Data Repositories"]
+        SEC["Security<br/>CriptografiaSenhaGatewayImpl (BCrypt)"]
+        TOK["Token<br/>AprovacaoTokenGatewayImpl<br/>TokenAutenticacaoGatewayImpl (JWT RSA-2048)"]
+        NOTIF["Notificação<br/>NotificacaoAprovacaoSmtpService (default)<br/>NotificacaoAprovacaoLogService (dev/test)"]
+        GWI --> PERS
+        GWI --> SEC
+        GWI --> TOK
+        GWI --> NOTIF
+    end
+
+    DB[("PostgreSQL")]
+
+    C --> UC
+    UC --> DOM
+    UC --> GW
+    GWI -.->|implements| GW
+    PERS --> DB
+
+    CFG[["CONFIG — injeção via Spring<br/>SecurityConfig · UseCaseConfig · CorsConfig<br/>SwaggerConfig · DataLoader · GlobalExceptionHandler"]]
+    CFG -.->|injeta| UC
+    CFG -.->|injeta| GWI
+
+    classDef entry fill:#E4E3EC,stroke:#6B6F8A,stroke-width:1.5px,color:#1E2430
+    classDef usecase fill:#DCE7F0,stroke:#3E7CA6,stroke-width:1.5px,color:#1E2430
+    classDef core fill:#DCEBE9,stroke:#2B6E6B,stroke-width:1.5px,color:#1E2430
+    classDef outer fill:#F3E3D3,stroke:#B5622A,stroke-width:1.5px,color:#1E2430
+    classDef config fill:#EDEAE0,stroke:#8A8574,stroke-width:1.5px,color:#1E2430
+    classDef db fill:#E4E3EC,stroke:#1E2430,stroke-width:1.5px,color:#1E2430
+
+    class C,DM,DTO entry
+    class UC usecase
+    class DOM,ENUM,EXC,GW core
+    class GWI,PERS,SEC,TOK,NOTIF outer
+    class CFG config
+    class DB db
+```
+
+| Camada | Componentes | Papel |
+|---|---|---|
+| **Entrypoint** | Controllers, DTO Mappers, DTOs | Recebe a requisição HTTP |
+| **Use Cases** | `AuthUseCase`, `ClienteUseCase`, `VeiculoUseCase`, `OrdemServicoUseCase`, `ProdutoUseCase` | Orquestra as regras de aplicação, chama gateways por interface |
+| **Domain + Gateways** | Entidades de domínio, enums, exceções, interfaces de gateway | Regras da empresa — camada mais protegida, zero dependência de framework |
+| **Dataprovider** | Implementações JPA, security, token, notificação | Fala com o mundo externo (banco, e-mail, criptografia) |
+| **Config** | `SecurityConfig`, `UseCaseConfig`, `CorsConfig`, `SwaggerConfig`, `DataLoader`, `GlobalExceptionHandler` | Fiação do Spring (injeção de dependência) — atravessa as camadas, fora do fluxo de chamada |
+
+> **Regra de dependência:** as setas sólidas seguem sempre o fluxo Entrypoint → Use Cases → Domain/Gateways. Nada em `core.domain` conhece Spring, JPA ou HTTP. A seta tracejada `implements` mostra a inversão: é o Dataprovider que aponta para a interface definida no Core — nunca o contrário.
+
+### Estrutura de pacotes
+
 ```
 br.com.fiap.oficina
 ├── core/
@@ -181,6 +260,25 @@ Pré-requisito: os recursos do Terraform (`/infra`) já precisam existir (EKS, R
 | `JWT_PRIVATE_KEY` / `JWT_PUBLIC_KEY` | Conteúdo (PEM) do par de chaves RSA — o mesmo par para todas as réplicas, ver [`k8s/README.md`](k8s/README.md) | Gerado uma vez via `openssl` |
 | `GMAIL_SMTP_USERNAME` / `GMAIL_SMTP_PASSWORD` | Endereço Gmail remetente e sua App Password | Conta Google → Segurança → Verificação em duas etapas → Senhas de app |
 | `APP_PUBLIC_BASE_URL` | URL pública da aplicação usada nos links de aprovação do e-mail (ex: `http://<elb-dns>`) | `kubectl get service oficina-api -n oficina -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'` após o primeiro deploy |
+
+---
+
+## Collection Postman
+
+Os arquivos estão em [`postman/`](postman/):
+
+| Arquivo | Descrição |
+|---------|-----------|
+| [`oficina-api.collection.json`](postman/oficina-api.collection.json) | Collection completa (Auth, Clientes, Veículos, OS, Produtos, Aprovação Pública) |
+| [`oficina-api.environment.json`](postman/oficina-api.environment.json) | Environment com `base_url`, `token`, `cliente_id`, `veiculo_id`, `os_id`, `os_item_id`, `produto_id`, `aprovacao_token` |
+
+**Como usar:**
+1. Importe os dois arquivos no Postman (File → Import)
+2. Selecione o environment **"Oficina Mecânica - Local"**
+3. Execute **Auth → Login como ADMIN** — o token é salvo automaticamente em `{{token}}`
+4. Use os demais endpoints normalmente
+
+> Link direto da collection no Postman: https://go.postman.co/collection/53473425-944a4c94-95cd-4d59-b903-a5ea1c87b820
 
 ---
 

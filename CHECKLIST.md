@@ -71,13 +71,13 @@
 ### README.md atualizado
 - [x] Descrição da solução e dos objetivos desta fase — `## Sobre o Projeto` atualizado com Clean Architecture e feature de notificação por e-mail
 - [ ] Desenho da arquitetura proposta
-  - [ ] Componentes da aplicação (Clean Architecture)
+  - [x] Componentes da aplicação (Clean Architecture) — diagrama Mermaid em `README.md` (`## Arquitetura` → `### Diagrama de componentes`), gerado a partir da estrutura real de pacotes
   - [ ] Infraestrutura provisionada (AWS: EKS, RDS, etc.)
   - [ ] Fluxo de deploy (CI/CD → Docker → Terraform → K8s)
 - [x] Instruções de execução local (já existiam da Fase 1)
 - [x] Instruções de deploy em Kubernetes (seção adicionada, linka `k8s/README.md`)
 - [x] Instruções de provisionamento da infraestrutura com Terraform (seção adicionada, linka `infra/README.md`)
-- [ ] Link para a collection completa das APIs (Postman já existe em `Challenge - Fase 1/postman/` — atualizar e linkar)
+- [x] Link para a collection completa das APIs (Postman já existe em `Challenge - Fase 1/postman/` — atualizar e linkar)
 - [ ] Link para vídeo demonstrativo (YouTube/Vimeo, público ou não listado, até 15 min) demonstrando:
   - [ ] Deploy da aplicação
   - [ ] Execução do CI/CD
