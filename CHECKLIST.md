@@ -78,13 +78,13 @@
 - [x] Instruções de deploy em Kubernetes (seção adicionada, linka `k8s/README.md`)
 - [x] Instruções de provisionamento da infraestrutura com Terraform (seção adicionada, linka `infra/README.md`)
 - [x] Link para a collection completa das APIs (Postman já existe em `Challenge - Fase 1/postman/` — atualizar e linkar)
-- [ ] Link para vídeo demonstrativo (YouTube/Vimeo, público ou não listado, até 15 min) demonstrando:
-  - [ ] Deploy da aplicação
-  - [ ] Execução do CI/CD
-  - [ ] Consumo das APIs
-  - [ ] Escalabilidade automática (pode simular aumento de carga ou múltiplas OS)
+- [x] Link para vídeo demonstrativo (YouTube/Vimeo, público ou não listado, até 15 min) demonstrando:
+  - [x] Execução do CI/CD
+  - [x] Deploy da aplicação
+  - [x] Consumo das APIs
+  - [x] Escalabilidade automática (pode simular aumento de carga ou múltiplas OS)
 
 ### Entrega no portal do aluno
-- [ ] PDF contendo o link do repositório GitHub compartilhado com o usuário `soat-architecture`
-- [ ] PDF contendo o desenho da arquitetura com os recursos escolhidos
-- [ ] PDF contendo o link do vídeo (até 15 minutos) apresentando a solução desenvolvida
+- [x] PDF contendo o link do repositório GitHub compartilhado com o usuário `soat-architecture`
+- [x] PDF contendo o desenho da arquitetura com os recursos escolhidos
+- [x] PDF contendo o link do vídeo (até 15 minutos) apresentando a solução desenvolvida
