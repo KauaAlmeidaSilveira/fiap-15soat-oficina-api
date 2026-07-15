@@ -6,7 +6,7 @@
 
 ### Refatoração
 - [x] Clean Code (nomes claros, simplicidade, coesão) — revisar durante a refatoração de arquitetura
-- [x] Clean Architecture (`core/domain`, `core/usecase`, `core/gateway` (portas) / `dataprovider/*` (JPA, security, email, token) / `entrypoint/controller`) — migração concluída (commits `1fef318`..`19b6604`, PR `refactor/clean-architecture` mergeado). **`CLAUDE.md` e a seção "Arquitetura" do `README.md` ainda descrevem a estrutura antiga — precisam ser regenerados.**
+- [x] Clean Architecture (`core/domain`, `core/usecase`, `core/gateway` (portas) / `dataprovider/*` (JPA, security, email, token) / `entrypoint/controller`) — migração concluída (commits `1fef318`..`19b6604`, PR `refactor/clean-architecture` mergeado). `CLAUDE.md` e a seção "Arquitetura" do `README.md` já refletem a estrutura atual (diagramas revisados e embutidos em `docs/`).
 - [x] Testes automatizados (unitários e/ou integração) cobrindo os fluxos críticos — 151 métodos `@Test` (unitários + integração). Cobertura real confirmada via `mvn verify`: **95,5% de instruções** no total, **96,4% nos pacotes verificados pelo gate JaCoCo** (`core.usecase`, `core.domain.entity`, `entrypoint.controller`) — acima do mínimo de 80%. BUILD SUCCESS.
 
 ### APIs — alterar/criar
@@ -70,10 +70,10 @@
 
 ### README.md atualizado
 - [x] Descrição da solução e dos objetivos desta fase — `## Sobre o Projeto` atualizado com Clean Architecture e feature de notificação por e-mail
-- [ ] Desenho da arquitetura proposta
-  - [x] Componentes da aplicação (Clean Architecture) — diagrama Mermaid em `README.md` (`## Arquitetura` → `### Diagrama de componentes`), gerado a partir da estrutura real de pacotes
-  - [ ] Infraestrutura provisionada (AWS: EKS, RDS, etc.)
-  - [ ] Fluxo de deploy (CI/CD → Docker → Terraform → K8s)
+- [x] Desenho da arquitetura proposta
+  - [x] Componentes da aplicação (Clean Architecture) — imagem `docs/diagrama-componentes.png` embutida em `README.md` (`## Arquitetura` → `### Diagrama de componentes`), revisada contra a estrutura real de pacotes
+  - [x] Infraestrutura provisionada (AWS: EKS, RDS, etc.) — imagem `docs/diagrama-infraestrutura.png` embutida em `README.md` (`### Infraestrutura e fluxo de deploy`), revisada contra `infra/*.tf` e `k8s/*.yaml`
+  - [x] Fluxo de deploy (CI/CD → Docker → Terraform → K8s) — coberto na mesma imagem acima
 - [x] Instruções de execução local (já existiam da Fase 1)
 - [x] Instruções de deploy em Kubernetes (seção adicionada, linka `k8s/README.md`)
 - [x] Instruções de provisionamento da infraestrutura com Terraform (seção adicionada, linka `infra/README.md`)

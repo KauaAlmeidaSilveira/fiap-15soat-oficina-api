@@ -32,70 +32,7 @@ O projeto segue **Clean Architecture**: dependências sempre apontam para dentro
 
 ### Diagrama de componentes
 
-```mermaid
-%%{init: {'theme':'base', 'themeVariables': {'primaryColor':'#EDEAE2','primaryTextColor':'#1E2430','primaryBorderColor':'#C9C4B8','lineColor':'#1E2430','clusterBkg':'#FBFAF6','clusterBorder':'#C9C4B8'}}}%%
-flowchart LR
-    HTTP(["Requisição HTTP"]) --> C
-
-    subgraph L1["ENTRYPOINT — Adaptadores de Entrada"]
-        direction TB
-        C["Controllers<br/>Auth · Cliente · Veiculo<br/>OrdemServico · Produto<br/>AprovacaoPublica"]
-        DM["DTO Mappers (MapStruct)<br/>ClienteDtoMapper · VeiculoDtoMapper<br/>OrdemServicoDtoMapper · ProdutoDtoMapper"]
-        DTO["DTOs<br/>Request / Response"]
-    end
-
-    subgraph L2["CORE — Use Cases (regras de aplicação)"]
-        direction TB
-        UC["Use Cases<br/>AuthUseCase · ClienteUseCase<br/>VeiculoUseCase · OrdemServicoUseCase<br/>ProdutoUseCase"]
-    end
-
-    subgraph L3["CORE — Domain + Gateways (regras da empresa · sem frameworks)"]
-        direction TB
-        DOM["Domain Entities (Java puro)<br/>Cliente · Veiculo · OrdemServico · OsItem<br/>Produto · MovimentacaoEstoque · Usuario"]
-        ENUM["Enums<br/>StatusOS · TipoDocumento<br/>TipoProduto · TipoMovimentacao"]
-        EXC["Exceptions<br/>RecursoNaoEncontrado · RegraDeNegocio<br/>CredenciaisInvalidas · TokenAprovacaoInvalido"]
-        GW["Gateways — interfaces/portas<br/>Cliente · Veiculo · OrdemServico · Produto<br/>Estoque · Usuario · CriptografiaSenha<br/>TokenAutenticacao · TokenAprovacao · NotificacaoAprovacao"]
-    end
-
-    subgraph L4["DATAPROVIDER — Adaptadores de Saída (frameworks e drivers)"]
-        direction TB
-        GWI["Gateway Implementations (JPA)"]
-        PERS["Persistence<br/>JPA Entities + MapStruct + 10 Spring Data Repositories"]
-        SEC["Security<br/>CriptografiaSenhaGatewayImpl (BCrypt)"]
-        TOK["Token<br/>AprovacaoTokenGatewayImpl<br/>TokenAutenticacaoGatewayImpl (JWT RSA-2048)"]
-        NOTIF["Notificação<br/>NotificacaoAprovacaoSmtpService (default)<br/>NotificacaoAprovacaoLogService (dev/test)"]
-        GWI --> PERS
-        GWI --> SEC
-        GWI --> TOK
-        GWI --> NOTIF
-    end
-
-    DB[("PostgreSQL")]
-
-    C --> UC
-    UC --> DOM
-    UC --> GW
-    GWI -.->|implements| GW
-    PERS --> DB
-
-    CFG[["CONFIG — injeção via Spring<br/>SecurityConfig · UseCaseConfig · CorsConfig<br/>SwaggerConfig · DataLoader · GlobalExceptionHandler"]]
-    CFG -.->|injeta| UC
-    CFG -.->|injeta| GWI
-
-    classDef entry fill:#E4E3EC,stroke:#6B6F8A,stroke-width:1.5px,color:#1E2430
-    classDef usecase fill:#DCE7F0,stroke:#3E7CA6,stroke-width:1.5px,color:#1E2430
-    classDef core fill:#DCEBE9,stroke:#2B6E6B,stroke-width:1.5px,color:#1E2430
-    classDef outer fill:#F3E3D3,stroke:#B5622A,stroke-width:1.5px,color:#1E2430
-    classDef config fill:#EDEAE0,stroke:#8A8574,stroke-width:1.5px,color:#1E2430
-    classDef db fill:#E4E3EC,stroke:#1E2430,stroke-width:1.5px,color:#1E2430
-
-    class C,DM,DTO entry
-    class UC usecase
-    class DOM,ENUM,EXC,GW core
-    class GWI,PERS,SEC,TOK,NOTIF outer
-    class CFG config
-    class DB db
-```
+![Diagrama de componentes — Clean Architecture](docs/diagrama-componentes.png)
 
 | Camada | Componentes | Papel |
 |---|---|---|
@@ -106,6 +43,12 @@ flowchart LR
 | **Config** | `SecurityConfig`, `UseCaseConfig`, `CorsConfig`, `SwaggerConfig`, `DataLoader`, `GlobalExceptionHandler` | Fiação do Spring (injeção de dependência) — atravessa as camadas, fora do fluxo de chamada |
 
 > **Regra de dependência:** as setas sólidas seguem sempre o fluxo Entrypoint → Use Cases → Domain/Gateways. Nada em `core.domain` conhece Spring, JPA ou HTTP. A seta tracejada `implements` mostra a inversão: é o Dataprovider que aponta para a interface definida no Core — nunca o contrário.
+
+### Infraestrutura e fluxo de deploy
+
+![Diagrama de infraestrutura AWS e runtime Kubernetes](docs/diagrama-infraestrutura.png)
+
+Pipeline CI/CD (GitHub Actions) builda e testa a aplicação, publica a imagem no Amazon ECR e aplica os manifestos Kubernetes no cluster EKS. A infraestrutura (VPC, EKS, RDS, ECR) é provisionada via Terraform (`/infra`); os manifestos de runtime (Deployment, Service, HPA, ConfigMap, Secret) ficam em `/k8s`. Detalhes de cada etapa nas seções **Deploy em Kubernetes**, **Provisionamento da infraestrutura** e **CI/CD** mais abaixo.
 
 ### Estrutura de pacotes
 
@@ -139,12 +82,13 @@ br.com.fiap.oficina
 |---|---|
 | `Cliente` | Pessoa física (CPF) ou jurídica (CNPJ) |
 | `Veiculo` | Veículo com placa, marca, modelo, ano, cor e chassi |
-| `ClienteVeiculo` | Vínculo N:N entre cliente e veículo |
 | `OrdemServico` | OS com status, itens e valor total calculado |
 | `OsItem` | Item da OS (produto + quantidade + preço unitário) |
 | `Produto` | Peça (`PECA`) ou serviço (`SERVICO`) |
-| `MovimentacaoEstoque` | Registro de cada entrada ou saída de estoque |
-| `SaldoEstoque` | Saldo atual de cada peça |
+| `MovimentacaoEstoque` | Registro de cada entrada ou saída de estoque — o saldo é calculado a partir daqui (soma ENTRADA − SAIDA), não persistido à parte |
+| `Usuario` | Conta de acesso à API, com uma ou mais roles (`ADMIN`, `OPERADOR`, `RECEPCAO`) |
+
+> `ClienteVeiculo` (vínculo N:N) e `SaldoEstoque` também existem, mas só como entidades JPA em `dataprovider/persistence/entity` — não são entidades de domínio puro.
 
 ### Fluxo de status da OS
 
@@ -162,6 +106,8 @@ Ao entrar em `AGUARDANDO_APROVACAO` o sistema envia automaticamente um e-mail ao
 
 Todos os endpoints exigem **JWT Bearer token**, exceto:
 - `POST /api/auth/login`
+- `GET /aprovacao-os` — link de aprovação/recusa de orçamento enviado por e-mail (token próprio, não JWT de sessão)
+- `GET /actuator/health` — health check
 - Swagger UI (`/swagger-ui.html`, `/v3/api-docs/**`)
 - H2 Console (`/h2-console/**`) — somente perfil `dev`
 
@@ -252,7 +198,7 @@ Pré-requisito: os recursos do Terraform (`/infra`) já precisam existir (EKS, R
 
 | Secret | Valor | De onde vem |
 |---|---|---|
-| `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` | Credenciais de um usuário/role IAM com permissão de ECR, EKS e RDS | Console/IAM da AWS |
+| `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` / `AWS_SESSION_TOKEN` | Credenciais temporárias (AWS Academy) de um usuário/role IAM com permissão de ECR, EKS e RDS | Console/IAM da AWS |
 | `EKS_CLUSTER_NAME` | Nome do cluster | `terraform output eks_cluster_name` |
 | `ECR_REPOSITORY_URL` | URI do repositório de imagens | `terraform output ecr_repository_url` |
 | `RDS_ENDPOINT` | Endpoint do banco | `terraform output rds_endpoint` |
@@ -315,33 +261,6 @@ mvn verify
 # Relatório HTML gerado em:
 # target/site/jacoco/index.html
 ```
-
-### Cobertura atual
-
-Números confirmados via `mvn verify` (gate JaCoCo verificado nos pacotes `core.usecase`, `core.domain.entity` e `entrypoint.controller`):
-
-| Pacote | Cobertura de instruções |
-|--------|------------------------|
-| `config` | 100% |
-| `core.domain.entity` | 100% |
-| `core.domain.enums` | 100% |
-| `core.domain.exception` | 100% |
-| `core.gateway` | 100% |
-| `core.usecase` | 95% |
-| `dataprovider.gateway` | 93% |
-| `dataprovider.notificacao` | 97% |
-| `dataprovider.persistence.entity` | 97% |
-| `dataprovider.persistence.mapper` | 92% |
-| `dataprovider.security` | 100% |
-| `dataprovider.token` | 95% |
-| `dto.request` | 100% |
-| `dto.response` | 100% |
-| `entrypoint.controller` | 98% |
-| `entrypoint.controller.mapper` | 96% |
-| `validation` | 61% |
-| **Total** | **95,5%** |
-
-Cobertura mínima exigida pelo gate do JaCoCo: **80%**. 151 testes no total (unitários + integração).
 
 ### Tipos de testes
 
@@ -492,6 +411,8 @@ fiap-15soat-oficina-api/
 │               └── token/              # AprovacaoTokenGatewayImplUnitTest
 ├── k8s/                       # Manifestos Kubernetes (deploy no EKS) — ver k8s/README.md
 ├── infra/                     # Terraform (EKS + RDS + ECR na AWS) — ver infra/README.md
+├── docs/                      # Diagramas de arquitetura (componentes + infraestrutura/deploy)
+├── postman/                   # Collection e environment do Postman
 ├── Dockerfile
 ├── docker-compose.yml
 ├── pom.xml
