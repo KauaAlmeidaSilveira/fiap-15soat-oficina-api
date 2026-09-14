@@ -48,7 +48,7 @@ O projeto segue **Clean Architecture**: dependências sempre apontam para dentro
 
 ![Diagrama de infraestrutura AWS e runtime Kubernetes](docs/diagrama-infraestrutura.png)
 
-Pipeline CI/CD (GitHub Actions) builda e testa a aplicação, publica a imagem no Amazon ECR e aplica os manifestos Kubernetes no cluster EKS. A infraestrutura (VPC, EKS, RDS, ECR) é provisionada via Terraform (`/infra`); os manifestos de runtime (Deployment, Service, HPA, ConfigMap, Secret) ficam em `/k8s`. Detalhes de cada etapa nas seções **Deploy em Kubernetes**, **Provisionamento da infraestrutura** e **CI/CD** mais abaixo.
+Pipeline CI/CD (GitHub Actions) builda e testa a aplicação, publica a imagem no Amazon ECR e aplica os manifestos Kubernetes no cluster EKS. A infraestrutura é provisionada via Terraform em repositórios separados — VPC/EKS/ECR em `fiap-15soat-oficina-infra-k8s` e o RDS em `fiap-15soat-oficina-infra-db`; os manifestos de runtime (Deployment, Service, HPA, ConfigMap, Secret) ficam em `/k8s`. Detalhes de cada etapa nas seções **Deploy em Kubernetes**, **Provisionamento da infraestrutura** e **CI/CD** mais abaixo.
 
 ### Estrutura de pacotes
 
@@ -173,16 +173,26 @@ Sobe dois containers: **postgres** (PostgreSQL 16) e **oficina-api** (Spring Boo
 ### Deploy em Kubernetes (produção — AWS EKS)
 
 Manifestos em [`k8s/`](k8s/): `Deployment`, `Service` (LoadBalancer), `ConfigMap`, `Secret` e `HorizontalPodAutoscaler`.
-O banco de dados não roda no cluster — é uma instância RDS externa provisionada via Terraform (`/infra`).
+O banco de dados não roda no cluster — é uma instância RDS externa provisionada pelo repositório `fiap-15soat-oficina-infra-db`.
 
 Instruções completas (geração do Secret com as chaves JWT, pré-requisitos de metrics-server/IAM,
 ordem de aplicação dos manifestos) em [`k8s/README.md`](k8s/README.md).
 
 ### Provisionamento da infraestrutura (Terraform — AWS)
 
-Scripts em [`infra/`](infra/) provisionam o cluster EKS, o RDS PostgreSQL e o repositório ECR usados
-pelo deploy em Kubernetes acima. Detalhes de recursos criados, custos, pré-requisitos e o passo a
-passo de `terraform apply`/`destroy` em [`infra/README.md`](infra/README.md).
+A infraestrutura vive em dois repositórios próprios, cada um com seu state e seu ciclo de vida:
+
+| Repositório | Provisiona |
+|---|---|
+| `fiap-15soat-oficina-infra-k8s` | VPC, cluster EKS e repositório ECR |
+| `fiap-15soat-oficina-infra-db` | Instância RDS PostgreSQL |
+
+Os dois são independentes: o de banco descobre a VPC por data source, sem ler o state do outro.
+A única exigência é que `project_name` seja idêntico nos dois — é por esse nome que a VPC é
+encontrada e que as subnets recebem as tags do EKS.
+
+Dashboards e alertas do New Relic ficam **neste** repositório, em [`observability/`](observability/),
+porque as queries NRQL são acopladas por string aos nomes das métricas emitidas pelo código Java.
 
 ### CI/CD (GitHub Actions)
 
@@ -192,7 +202,7 @@ Pipeline em [`.github/workflows/ci-cd.yml`](.github/workflows/ci-cd.yml), com 3 
 2. **build-and-push-image** (só em push) — autentica na AWS, faz login no ECR e builda/publica a imagem Docker com duas tags: o SHA curto do commit e `latest`.
 3. **deploy** (só em push) — aponta o `kubectl` para o cluster EKS, confirma que o RDS está disponível (o schema em si é gerenciado pelo Hibernate via `ddl-auto=update` no boot da aplicação — não há migration tool dedicado), cria/atualiza o Secret da aplicação a partir dos secrets do GitHub, substitui os placeholders `<RDS_ENDPOINT>`/`<APP_PUBLIC_BASE_URL>`/`<ECR_URI>` nos manifestos e aplica tudo em `/k8s`.
 
-Pré-requisito: os recursos do Terraform (`/infra`) já precisam existir (EKS, RDS, ECR criados via `terraform apply`) antes desse pipeline rodar com sucesso — ele não provisiona infraestrutura, só builda/testa/publica/faz deploy.
+Pré-requisito: os recursos dos repositórios de infraestrutura (`fiap-15soat-oficina-infra-k8s` e `fiap-15soat-oficina-infra-db`) já precisam existir antes desse pipeline rodar com sucesso — ele não provisiona infraestrutura, só builda/testa/publica/faz deploy.
 
 **Secrets a configurar no repositório GitHub** (Settings → Secrets and variables → Actions):
 
@@ -410,7 +420,7 @@ fiap-15soat-oficina-api/
 │               ├── notificacao/        # NotificacaoAprovacaoSmtpServiceUnitTest
 │               └── token/              # AprovacaoTokenGatewayImplUnitTest
 ├── k8s/                       # Manifestos Kubernetes (deploy no EKS) — ver k8s/README.md
-├── infra/                     # Terraform (EKS + RDS + ECR na AWS) — ver infra/README.md
+├── observability/             # Terraform do New Relic (dashboards + alertas)
 ├── docs/                      # Diagramas de arquitetura (componentes + infraestrutura/deploy)
 ├── postman/                   # Collection e environment do Postman
 ├── Dockerfile

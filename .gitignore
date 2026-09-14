@@ -48,12 +48,13 @@ jwt.public.key
 k8s/secret.yaml
 
 # Terraform - estado local, cache de providers e variaveis com segredos
-# Use infra/terraform.tfvars.example como template
+# Sem barra no inicio, os padroes casam em qualquer diretorio (hoje observability/,
+# e nao quebram se surgir outra pasta com Terraform).
 # (.terraform.lock.hcl NAO entra aqui - deve ser commitado para builds reprodutiveis)
-infra/.terraform/
-infra/terraform.tfvars
-infra/terraform.tfstate*
-infra/crash.log
+.terraform/
+terraform.tfvars
+terraform.tfstate*
+crash.log
 
 # Credenciais SMTP locais - nunca versionar
 # Use .env.example como template

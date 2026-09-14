@@ -22,7 +22,7 @@ spec:
     spec:
       containers:
         - name: oficina-api
-          # Substituir pela URI real do ECR criada na fase de Terraform (/infra).
+          # Substituir pela URI real do ECR (terraform output ecr_repository_url em fiap-15soat-oficina-infra-k8s).
           image: "<ECR_URI>/oficina-api:latest"
           ports:
             - containerPort: 8080

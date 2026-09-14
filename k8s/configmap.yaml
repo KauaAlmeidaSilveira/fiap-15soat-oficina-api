@@ -5,7 +5,7 @@ metadata:
   namespace: oficina
 data:
   SPRING_PROFILES_ACTIVE: "default"
-  # Substituir pelo endpoint real do RDS provisionado na fase de Terraform (/infra).
+  # Substituir pelo endpoint real do RDS (terraform output rds_endpoint em fiap-15soat-oficina-infra-db).
   DB_HOST: "<RDS_ENDPOINT>"
   # Paths de leitura das chaves montadas via Secret (jwt-keys) em /app/keys — não são segredo em si,
   # apenas o caminho do arquivo; o conteúdo sensível vem do volume montado a partir do Secret.

@@ -1,7 +1,7 @@
 # Manifestos Kubernetes — Oficina Mecânica API
 
 Manifestos para deploy da aplicação em um cluster Kubernetes (EKS na AWS). O banco de dados
-**não** roda no cluster — é uma instância RDS PostgreSQL externa, provisionada via Terraform (`/infra`).
+**não** roda no cluster — é uma instância RDS PostgreSQL externa, provisionada pelo repositório `fiap-15soat-oficina-infra-db`.
 
 ## Pré-requisitos
 

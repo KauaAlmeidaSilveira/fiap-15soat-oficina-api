@@ -1,0 +1,11 @@
+# Copie para terraform.tfvars (gitignorado) e preencha.
+#
+# newrelic_account_id: visivel na URL quando logado. Nao e segredo.
+# newrelic_api_key:    New Relic > Administration > API keys > Create a key,
+#                      com Key type = USER. Comeca com NRAK-.
+#                      NAO confundir com a license key, que termina em NRAL.
+
+newrelic_account_id = 0000000
+newrelic_api_key    = "NRAK-<sua-user-api-key>"
+newrelic_region     = "US"
+alertas_email       = "<email-que-recebe-os-alertas>"
