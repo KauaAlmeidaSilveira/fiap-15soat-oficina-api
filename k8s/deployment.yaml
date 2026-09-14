@@ -14,6 +14,11 @@ spec:
     metadata:
       labels:
         app: oficina-api
+      annotations:
+        # Faz o nri-prometheus descobrir e raspar as metricas oficina_* do actuator.
+        prometheus.io/scrape: "true"
+        prometheus.io/path: "/actuator/prometheus"
+        prometheus.io/port: "8080"
     spec:
       containers:
         - name: oficina-api
@@ -40,6 +45,11 @@ spec:
                 secretKeyRef:
                   name: oficina-api-secrets
                   key: GMAIL_SMTP_PASSWORD
+            - name: NEW_RELIC_LICENSE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: oficina-api-secrets
+                  key: NEW_RELIC_LICENSE_KEY
           volumeMounts:
             - name: jwt-keys
               mountPath: /app/keys

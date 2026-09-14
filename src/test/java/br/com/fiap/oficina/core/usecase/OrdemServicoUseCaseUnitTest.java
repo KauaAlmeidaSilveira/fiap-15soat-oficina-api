@@ -12,6 +12,7 @@ import br.com.fiap.oficina.core.domain.exception.RecursoNaoEncontradoException;
 import br.com.fiap.oficina.core.domain.exception.RegraDeNegocioException;
 import br.com.fiap.oficina.core.gateway.ClienteGateway;
 import br.com.fiap.oficina.core.gateway.EstoqueGateway;
+import br.com.fiap.oficina.core.gateway.MetricasGateway;
 import br.com.fiap.oficina.core.gateway.NotificacaoAprovacaoGateway;
 import br.com.fiap.oficina.core.gateway.OrdemServicoGateway;
 import br.com.fiap.oficina.core.gateway.ProdutoGateway;
@@ -22,10 +23,13 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -50,6 +54,9 @@ class OrdemServicoUseCaseUnitTest {
     @Mock EstoqueGateway estoqueGateway;
     @Mock TokenAprovacaoGateway tokenGateway;
     @Mock NotificacaoAprovacaoGateway notificacaoGateway;
+    @Mock MetricasGateway metricasGateway;
+
+    @Captor ArgumentCaptor<Duration> duracaoCaptor;
 
     OrdemServicoUseCase useCase;
 
@@ -62,7 +69,7 @@ class OrdemServicoUseCaseUnitTest {
     @BeforeEach
     void setup() {
         useCase = new OrdemServicoUseCase(osGateway, clienteGateway, veiculoGateway, produtoGateway,
-                estoqueGateway, tokenGateway, notificacaoGateway, "http://localhost:8080");
+                estoqueGateway, tokenGateway, notificacaoGateway, metricasGateway, "http://localhost:8080");
 
         cliente = Cliente.builder().id(1L).nome("João").build();
         veiculo = Veiculo.builder().id(1L).placa("ABC1234").marca("Toyota").modelo("Corolla").ano(2020).build();
@@ -329,5 +336,74 @@ class OrdemServicoUseCaseUnitTest {
     private OrdemServico base(String numero, StatusOS status, LocalDateTime criadoEm) {
         return OrdemServico.builder().numero(numero).cliente(cliente).veiculo(veiculo)
                 .status(status).valorTotal(BigDecimal.ZERO).itens(new ArrayList<>()).criadoEm(criadoEm).build();
+    }
+
+    @Test
+    @DisplayName("Criar OS deve registrar a métrica de criação")
+    void criarDeveRegistrarMetrica() {
+        when(clienteGateway.buscarPorId(1L)).thenReturn(Optional.of(cliente));
+        when(veiculoGateway.buscarPorId(1L)).thenReturn(Optional.of(veiculo));
+        when(osGateway.salvar(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        useCase.criar(1L, 1L, "Motor falhando", null, List.of());
+
+        verify(metricasGateway).ordemServicoCriada();
+    }
+
+    @Test
+    @DisplayName("Avançar status deve registrar a transição com o tempo no status anterior")
+    void avancarStatusDeveRegistrarTransicao() {
+        os.setStatusAlteradoEm(LocalDateTime.now().minusHours(2));
+        when(osGateway.buscarPorId(1L)).thenReturn(Optional.of(os));
+        when(osGateway.salvar(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        useCase.avancarStatus(1L);
+
+        verify(metricasGateway).transicaoDeStatus(
+                eq(StatusOS.RECEBIDA), eq(StatusOS.EM_DIAGNOSTICO), duracaoCaptor.capture());
+        assertThat(duracaoCaptor.getValue().toHours()).isEqualTo(2);
+    }
+
+    @Test
+    @DisplayName("Aprovar deve registrar a transição para EM_EXECUCAO")
+    void aprovarDeveRegistrarTransicao() {
+        os.setStatus(StatusOS.AGUARDANDO_APROVACAO);
+        os.setStatusAlteradoEm(LocalDateTime.now().minusHours(5));
+        when(osGateway.buscarPorId(1L)).thenReturn(Optional.of(os));
+        when(osGateway.salvar(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        useCase.aprovar(1L, true);
+
+        verify(metricasGateway).transicaoDeStatus(
+                eq(StatusOS.AGUARDANDO_APROVACAO), eq(StatusOS.EM_EXECUCAO), duracaoCaptor.capture());
+        assertThat(duracaoCaptor.getValue().toHours()).isEqualTo(5);
+    }
+
+    @Test
+    @DisplayName("Deve registrar falha de integração quando a notificação de aprovação falha")
+    void deveRegistrarFalhaDeIntegracaoNaNotificacao() {
+        os.setStatus(StatusOS.EM_DIAGNOSTICO);
+        when(osGateway.buscarPorId(1L)).thenReturn(Optional.of(os));
+        when(osGateway.salvar(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(tokenGateway.gerarToken(1L, true))
+                .thenThrow(new IllegalStateException("chave de assinatura indisponível"));
+
+        useCase.avancarStatus(1L);
+
+        verify(metricasGateway).falhaDeIntegracao("notificacao-aprovacao", "IllegalStateException");
+    }
+
+    @Test
+    @DisplayName("Falha na notificação não deve impedir a transição de status")
+    void falhaNaNotificacaoNaoDeveImpedirTransicao() {
+        os.setStatus(StatusOS.EM_DIAGNOSTICO);
+        when(osGateway.buscarPorId(1L)).thenReturn(Optional.of(os));
+        when(osGateway.salvar(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(tokenGateway.gerarToken(1L, true))
+                .thenThrow(new IllegalStateException("chave de assinatura indisponível"));
+
+        OrdemServico resultado = useCase.avancarStatus(1L);
+
+        assertThat(resultado.getStatus()).isEqualTo(StatusOS.AGUARDANDO_APROVACAO);
     }
 }

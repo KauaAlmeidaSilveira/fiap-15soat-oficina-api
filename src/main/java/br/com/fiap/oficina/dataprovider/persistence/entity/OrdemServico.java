@@ -72,6 +72,7 @@ public class OrdemServico {
     private LocalDateTime dataFim;
     private LocalDateTime dataEntrega;
     private LocalDateTime dataAprovacao;
+    private LocalDateTime statusAlteradoEm;
 
     @Column(nullable = false, updatable = false)
     private LocalDateTime criadoEm;

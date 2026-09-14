@@ -7,6 +7,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -115,5 +116,62 @@ class OrdemServicoDomainUnitTest {
         os.removerItem(a);
         assertThat(os.getItens()).containsExactly(b);
         assertThat(os.getValorTotal()).isEqualByComparingTo(new BigDecimal("200.00"));
+    }
+
+    @Test
+    @DisplayName("Avançar status deve registrar o instante da mudança")
+    void avancarStatusDeveRegistrarInstanteDaMudanca() {
+        OrdemServico os = novaOs();
+        LocalDateTime antes = LocalDateTime.now();
+
+        os.avancarStatus();
+
+        assertThat(os.getStatusAlteradoEm())
+                .isNotNull()
+                .isAfterOrEqualTo(antes);
+    }
+
+    @Test
+    @DisplayName("Aprovar deve registrar o instante da mudança")
+    void aprovarDeveRegistrarInstanteDaMudanca() {
+        OrdemServico os = OrdemServico.builder().status(StatusOS.AGUARDANDO_APROVACAO).build();
+        LocalDateTime antes = LocalDateTime.now();
+
+        os.aprovar(false);
+
+        assertThat(os.getStatusAlteradoEm())
+                .isNotNull()
+                .isAfterOrEqualTo(antes);
+    }
+
+    @Test
+    @DisplayName("Tempo no status atual deve contar a partir da última mudança")
+    void tempoNoStatusAtualDeveContarDaUltimaMudanca() {
+        OrdemServico os = OrdemServico.builder()
+                .status(StatusOS.EM_DIAGNOSTICO)
+                .criadoEm(LocalDateTime.now().minusHours(10))
+                .statusAlteradoEm(LocalDateTime.now().minusHours(2))
+                .build();
+
+        assertThat(os.tempoNoStatusAtual().toHours()).isEqualTo(2);
+    }
+
+    @Test
+    @DisplayName("Tempo no status atual deve usar a criação quando nunca houve transição")
+    void tempoNoStatusAtualDeveUsarCriacaoSemTransicao() {
+        OrdemServico os = OrdemServico.builder()
+                .status(StatusOS.RECEBIDA)
+                .criadoEm(LocalDateTime.now().minusHours(3))
+                .build();
+
+        assertThat(os.tempoNoStatusAtual().toHours()).isEqualTo(3);
+    }
+
+    @Test
+    @DisplayName("Tempo no status atual deve ser zero quando não há datas registradas")
+    void tempoNoStatusAtualDeveSerZeroSemDatas() {
+        OrdemServico os = OrdemServico.builder().status(StatusOS.RECEBIDA).build();
+
+        assertThat(os.tempoNoStatusAtual()).isZero();
     }
 }

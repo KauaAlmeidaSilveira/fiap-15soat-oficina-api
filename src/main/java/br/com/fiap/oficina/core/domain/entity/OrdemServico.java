@@ -9,6 +9,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -38,6 +39,7 @@ public class OrdemServico {
     private LocalDateTime dataFim;
     private LocalDateTime dataEntrega;
     private LocalDateTime dataAprovacao;
+    private LocalDateTime statusAlteradoEm;
     private LocalDateTime criadoEm;
 
     @Builder.Default
@@ -63,6 +65,7 @@ public class OrdemServico {
         if (anterior == StatusOS.AGUARDANDO_APROVACAO) {
             dataAprovacao = LocalDateTime.now();
         }
+        statusAlteradoEm = LocalDateTime.now();
     }
 
     public void aprovar(boolean aprovado) {
@@ -77,6 +80,7 @@ public class OrdemServico {
         } else {
             status = StatusOS.REPROVADA;
         }
+        statusAlteradoEm = LocalDateTime.now();
     }
 
     public void adicionarItem(OsItem item) {
@@ -95,6 +99,11 @@ public class OrdemServico {
 
     public void recalcularTotal() {
         valorTotal = itens.stream().map(OsItem::subtotal).reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    public Duration tempoNoStatusAtual() {
+        LocalDateTime desde = statusAlteradoEm != null ? statusAlteradoEm : criadoEm;
+        return desde != null ? Duration.between(desde, LocalDateTime.now()) : Duration.ZERO;
     }
 
     public boolean isAprovada() {

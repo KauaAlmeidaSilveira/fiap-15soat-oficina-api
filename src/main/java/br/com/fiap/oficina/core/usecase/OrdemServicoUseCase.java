@@ -11,6 +11,7 @@ import br.com.fiap.oficina.core.domain.enums.TipoProduto;
 import br.com.fiap.oficina.core.domain.exception.RecursoNaoEncontradoException;
 import br.com.fiap.oficina.core.gateway.ClienteGateway;
 import br.com.fiap.oficina.core.gateway.EstoqueGateway;
+import br.com.fiap.oficina.core.gateway.MetricasGateway;
 import br.com.fiap.oficina.core.gateway.NotificacaoAprovacaoGateway;
 import br.com.fiap.oficina.core.gateway.OrdemServicoGateway;
 import br.com.fiap.oficina.core.gateway.ProdutoGateway;
@@ -41,12 +42,14 @@ public class OrdemServicoUseCase {
     private final EstoqueGateway estoqueGateway;
     private final TokenAprovacaoGateway tokenGateway;
     private final NotificacaoAprovacaoGateway notificacaoGateway;
+    private final MetricasGateway metricasGateway;
     private final String publicBaseUrl;
 
     public OrdemServicoUseCase(OrdemServicoGateway osGateway, ClienteGateway clienteGateway,
                                VeiculoGateway veiculoGateway, ProdutoGateway produtoGateway,
                                EstoqueGateway estoqueGateway, TokenAprovacaoGateway tokenGateway,
-                               NotificacaoAprovacaoGateway notificacaoGateway, String publicBaseUrl) {
+                               NotificacaoAprovacaoGateway notificacaoGateway,
+                               MetricasGateway metricasGateway, String publicBaseUrl) {
         this.osGateway = osGateway;
         this.clienteGateway = clienteGateway;
         this.veiculoGateway = veiculoGateway;
@@ -54,6 +57,7 @@ public class OrdemServicoUseCase {
         this.estoqueGateway = estoqueGateway;
         this.tokenGateway = tokenGateway;
         this.notificacaoGateway = notificacaoGateway;
+        this.metricasGateway = metricasGateway;
         this.publicBaseUrl = publicBaseUrl;
     }
 
@@ -82,7 +86,9 @@ public class OrdemServicoUseCase {
             }
             os.recalcularTotal();
         }
-        return osGateway.salvar(os);
+        OrdemServico criada = osGateway.salvar(os);
+        metricasGateway.ordemServicoCriada();
+        return criada;
     }
 
     public OrdemServico buscarPorId(Long id) {
@@ -114,6 +120,7 @@ public class OrdemServicoUseCase {
     public OrdemServico avancarStatus(Long id) {
         OrdemServico os = buscarPorId(id);
         StatusOS anterior = os.getStatus();
+        Duration tempoNoStatusAnterior = os.tempoNoStatusAtual();
         os.avancarStatus();
         StatusOS novo = os.getStatus();
 
@@ -125,16 +132,21 @@ public class OrdemServicoUseCase {
         if (novo == StatusOS.AGUARDANDO_APROVACAO) {
             notificarAprovacaoPendente(salva);
         }
+        metricasGateway.transicaoDeStatus(anterior, novo, tempoNoStatusAnterior);
         return salva;
     }
 
     public OrdemServico aprovar(Long id, boolean aprovado) {
         OrdemServico os = buscarPorId(id);
+        StatusOS anterior = os.getStatus();
+        Duration tempoNoStatusAnterior = os.tempoNoStatusAtual();
         os.aprovar(aprovado);
         if (aprovado) {
             registrarSaidasEstoque(os);
         }
-        return osGateway.salvar(os);
+        OrdemServico salva = osGateway.salvar(os);
+        metricasGateway.transicaoDeStatus(anterior, salva.getStatus(), tempoNoStatusAnterior);
+        return salva;
     }
 
     public boolean processarDecisaoViaToken(String token) {
@@ -231,6 +243,7 @@ public class OrdemServicoUseCase {
         } catch (Exception e) {
             LOG.log(System.Logger.Level.WARNING,
                     "Falha ao notificar cliente sobre aprovação pendente da OS " + os.getNumero() + ": " + e.getMessage());
+            metricasGateway.falhaDeIntegracao("notificacao-aprovacao", e.getClass().getSimpleName());
         }
     }
 }

@@ -3,6 +3,7 @@ package br.com.fiap.oficina.config;
 import br.com.fiap.oficina.core.gateway.ClienteGateway;
 import br.com.fiap.oficina.core.gateway.CriptografiaSenhaGateway;
 import br.com.fiap.oficina.core.gateway.EstoqueGateway;
+import br.com.fiap.oficina.core.gateway.MetricasGateway;
 import br.com.fiap.oficina.core.gateway.NotificacaoAprovacaoGateway;
 import br.com.fiap.oficina.core.gateway.OrdemServicoGateway;
 import br.com.fiap.oficina.core.gateway.ProdutoGateway;
@@ -41,10 +42,10 @@ public class UseCaseConfig {
     public OrdemServicoUseCase ordemServicoUseCase(
             OrdemServicoGateway ordemServicoGateway, ClienteGateway clienteGateway, VeiculoGateway veiculoGateway,
             ProdutoGateway produtoGateway, EstoqueGateway estoqueGateway, TokenAprovacaoGateway tokenAprovacaoGateway,
-            NotificacaoAprovacaoGateway notificacaoAprovacaoGateway,
+            NotificacaoAprovacaoGateway notificacaoAprovacaoGateway, MetricasGateway metricasGateway,
             @Value("${app.public-base-url:http://localhost:8080}") String publicBaseUrl) {
         return new OrdemServicoUseCase(ordemServicoGateway, clienteGateway, veiculoGateway, produtoGateway,
-                estoqueGateway, tokenAprovacaoGateway, notificacaoAprovacaoGateway, publicBaseUrl);
+                estoqueGateway, tokenAprovacaoGateway, notificacaoAprovacaoGateway, metricasGateway, publicBaseUrl);
     }
 
     @Bean

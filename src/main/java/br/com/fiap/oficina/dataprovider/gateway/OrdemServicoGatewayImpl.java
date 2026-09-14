@@ -50,6 +50,7 @@ public class OrdemServicoGatewayImpl implements OrdemServicoGateway {
         entity.setDataFim(os.getDataFim());
         entity.setDataEntrega(os.getDataEntrega());
         entity.setDataAprovacao(os.getDataAprovacao());
+        entity.setStatusAlteradoEm(os.getStatusAlteradoEm());
         sincronizarItens(entity, os.getItens());
 
         return mapper.toDomain(osRepository.save(entity));

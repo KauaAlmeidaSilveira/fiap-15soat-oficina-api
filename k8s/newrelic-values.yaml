@@ -1,0 +1,50 @@
+# Valores do chart nri-bundle (integração do New Relic com Kubernetes).
+#
+# Instalação:
+#   helm repo add newrelic https://helm-charts.newrelic.com
+#   helm repo update
+#   helm upgrade --install newrelic-bundle newrelic/nri-bundle \
+#     --namespace newrelic --create-namespace \
+#     --set global.licenseKey="$NEW_RELIC_LICENSE_KEY" \
+#     --set global.cluster="$EKS_CLUSTER_NAME" \
+#     -f k8s/newrelic-values.yaml
+#
+# A licenseKey e o nome do cluster ficam de fora deste arquivo de propósito:
+# vêm por --set no comando (a chave é segredo, o nome varia por ambiente).
+
+global:
+  lowDataMode: true
+
+# CPU, memória e estado dos pods e nodes.
+newrelic-infrastructure:
+  enabled: true
+  privileged: true
+
+# kube-state-metrics: origem dos dados de estado dos objetos do cluster.
+kube-state-metrics:
+  enabled: true
+
+# Coleta os logs de stdout dos containers. É por aqui que o JSON emitido pelo
+# logback chega ao New Relic — por isso o forwarding do agente Java fica
+# desligado no ConfigMap, para não ingerir cada linha duas vezes.
+newrelic-logging:
+  enabled: true
+  lowDataMode: false
+
+# Descobre e raspa endpoints Prometheus anotados no cluster. É o que traz as
+# métricas oficina_* expostas em /actuator/prometheus.
+nri-prometheus:
+  enabled: true
+
+# Eventos do Kubernetes (OOMKilled, falha de agendamento, reinício de pod).
+nri-kube-events:
+  enabled: true
+
+# Não usados neste projeto — desligados para poupar recursos do node group,
+# que é pequeno (2x t3.medium).
+newrelic-pixie:
+  enabled: false
+pixie-chart:
+  enabled: false
+newrelic-infra-operator:
+  enabled: false

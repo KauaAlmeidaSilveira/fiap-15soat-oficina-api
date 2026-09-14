@@ -1,5 +1,6 @@
 package br.com.fiap.oficina.dataprovider.notificacao;
 
+import br.com.fiap.oficina.core.gateway.MetricasGateway;
 import br.com.fiap.oficina.core.gateway.NotificacaoAprovacaoGateway;
 import jakarta.mail.internet.MimeMessage;
 import org.junit.jupiter.api.BeforeEach;
@@ -9,6 +10,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.mail.MailSendException;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -18,6 +20,10 @@ import java.util.List;
 import java.util.Properties;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -25,13 +31,14 @@ import static org.mockito.Mockito.when;
 class NotificacaoAprovacaoSmtpServiceUnitTest {
 
     @Mock JavaMailSender mailSender;
+    @Mock MetricasGateway metricasGateway;
     NotificacaoAprovacaoSmtpService service;
 
     private NotificacaoAprovacaoGateway.Dados dados;
 
     @BeforeEach
     void setup() {
-        service = new NotificacaoAprovacaoSmtpService(mailSender);
+        service = new NotificacaoAprovacaoSmtpService(mailSender, metricasGateway);
         ReflectionTestUtils.setField(service, "remetente", "oficina@gmail.com");
 
         Session session = Session.getDefaultInstance(new Properties());
@@ -71,5 +78,24 @@ class NotificacaoAprovacaoSmtpServiceUnitTest {
                 .contains("http://localhost:8080/aprovacao-os?token=aprovar")
                 .contains("http://localhost:8080/aprovacao-os?token=recusar")
                 .contains("Óleo");
+    }
+
+    @Test
+    @DisplayName("Deve registrar falha de integração quando o envio SMTP falha")
+    void deveRegistrarFalhaQuandoEnvioFalha() {
+        doThrow(new MailSendException("servidor SMTP indisponível"))
+                .when(mailSender).send(any(MimeMessage.class));
+
+        service.notificar(dados, "http://aprovar", "http://recusar");
+
+        verify(metricasGateway).falhaDeIntegracao(eq("smtp"), eq("MailSendException"));
+    }
+
+    @Test
+    @DisplayName("Não deve registrar falha quando o envio é bem-sucedido")
+    void naoDeveRegistrarFalhaQuandoEnvioFunciona() {
+        service.notificar(dados, "http://aprovar", "http://recusar");
+
+        verify(metricasGateway, never()).falhaDeIntegracao(any(), any());
     }
 }

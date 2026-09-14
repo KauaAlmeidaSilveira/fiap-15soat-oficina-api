@@ -21,6 +21,7 @@
         <java.version>21</java.version>
         <springdoc.version>2.5.0</springdoc.version>
         <mapstruct.version>1.5.5.Final</mapstruct.version>
+        <logstash-logback.version>7.4</logstash-logback.version>
         <sonar.coverage.exclusions>
             **/config/DataLoader.java,
             **/OficinaApplication.java
@@ -87,6 +88,16 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-prometheus</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>net.logstash.logback</groupId>
+            <artifactId>logstash-logback-encoder</artifactId>
+            <version>${logstash-logback.version}</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>

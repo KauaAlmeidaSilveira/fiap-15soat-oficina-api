@@ -108,6 +108,7 @@ jobs:
             --from-literal=DB_PASSWORD="${{ secrets.DB_PASSWORD }}" \
             --from-literal=GMAIL_SMTP_USERNAME="${{ secrets.GMAIL_SMTP_USERNAME }}" \
             --from-literal=GMAIL_SMTP_PASSWORD="${{ secrets.GMAIL_SMTP_PASSWORD }}" \
+            --from-literal=NEW_RELIC_LICENSE_KEY="${{ secrets.NEW_RELIC_LICENSE_KEY }}" \
             --from-literal=jwt.private.key="${{ secrets.JWT_PRIVATE_KEY }}" \
             --from-literal=jwt.public.key="${{ secrets.JWT_PUBLIC_KEY }}" \
             --dry-run=client -o yaml | kubectl apply -f -
