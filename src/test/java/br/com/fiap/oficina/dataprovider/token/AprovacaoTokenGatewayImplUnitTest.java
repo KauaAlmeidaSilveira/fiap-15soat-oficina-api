@@ -8,8 +8,10 @@ import com.nimbusds.jose.jwk.source.ImmutableJWKSet;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.security.oauth2.jwt.JwtClaimsSet;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
+import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -22,6 +24,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -29,6 +32,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class AprovacaoTokenGatewayImplUnitTest {
 
     private AprovacaoTokenGatewayImpl gateway;
+    private JwtEncoder jwtEncoder;
 
     @BeforeEach
     void setup() throws Exception {
@@ -40,7 +44,7 @@ class AprovacaoTokenGatewayImplUnitTest {
 
         JwtDecoder jwtDecoder = NimbusJwtDecoder.withPublicKey(publicKey).build();
         JWK jwk = new RSAKey.Builder(publicKey).privateKey(privateKey).build();
-        JwtEncoder jwtEncoder = new NimbusJwtEncoder(new ImmutableJWKSet<>(new JWKSet(jwk)));
+        jwtEncoder = new NimbusJwtEncoder(new ImmutableJWKSet<>(new JWKSet(jwk)));
 
         gateway = new AprovacaoTokenGatewayImpl(jwtEncoder, jwtDecoder);
         ReflectionTestUtils.setField(gateway, "validadeDias", 7L);
@@ -87,5 +91,40 @@ class AprovacaoTokenGatewayImplUnitTest {
         assertThatThrownBy(() -> gateway.validar(token))
                 .isInstanceOf(TokenAprovacaoInvalidoException.class)
                 .hasMessageContaining("expirado");
+    }
+
+    @Test
+    @DisplayName("Deve rejeitar token de sessão (com audiência) usado como link de aprovação")
+    void deveRejeitarTokenComAudiencia() {
+        Instant agora = Instant.now();
+        String tokenSessao = jwtEncoder.encode(JwtEncoderParameters.from(JwtClaimsSet.builder()
+                .issuer("back-end")
+                .audience(List.of("oficina-api"))
+                .subject("os-aprovacao")
+                .issuedAt(agora)
+                .expiresAt(agora.plusSeconds(3600))
+                .claim("osId", "1")
+                .claim("aprovado", true)
+                .build())).getTokenValue();
+
+        assertThatThrownBy(() -> gateway.validar(tokenSessao))
+                .isInstanceOf(TokenAprovacaoInvalidoException.class);
+    }
+
+    @Test
+    @DisplayName("Deve rejeitar token de aprovação de outro emissor")
+    void deveRejeitarTokenDeOutroEmissor() {
+        Instant agora = Instant.now();
+        String outroEmissor = jwtEncoder.encode(JwtEncoderParameters.from(JwtClaimsSet.builder()
+                .issuer("https://abc123.execute-api.us-east-1.amazonaws.com")
+                .subject("os-aprovacao")
+                .issuedAt(agora)
+                .expiresAt(agora.plusSeconds(3600))
+                .claim("osId", "1")
+                .claim("aprovado", true)
+                .build())).getTokenValue();
+
+        assertThatThrownBy(() -> gateway.validar(outroEmissor))
+                .isInstanceOf(TokenAprovacaoInvalidoException.class);
     }
 }
