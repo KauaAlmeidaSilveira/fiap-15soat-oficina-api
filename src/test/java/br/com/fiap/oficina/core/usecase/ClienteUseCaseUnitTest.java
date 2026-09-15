@@ -1,6 +1,7 @@
 package br.com.fiap.oficina.core.usecase;
 
 import br.com.fiap.oficina.core.domain.entity.Cliente;
+import br.com.fiap.oficina.core.domain.enums.StatusCliente;
 import br.com.fiap.oficina.core.domain.enums.TipoDocumento;
 import br.com.fiap.oficina.core.domain.exception.RecursoNaoEncontradoException;
 import br.com.fiap.oficina.core.domain.exception.RegraDeNegocioException;
@@ -9,6 +10,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -21,7 +23,6 @@ import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -42,6 +43,7 @@ class ClienteUseCaseUnitTest {
                 .cpfCnpj("12345678901")
                 .tipoDocumento(TipoDocumento.CPF)
                 .email("joao@email.com")
+                .status(StatusCliente.ATIVO)
                 .criadoEm(LocalDateTime.now())
                 .build();
     }
@@ -100,13 +102,24 @@ class ClienteUseCaseUnitTest {
     }
 
     @Test
-    @DisplayName("Deve listar todos os clientes")
-    void deveListarTodos() {
-        when(clienteGateway.listarTodos()).thenReturn(List.of(clienteExistente));
+    @DisplayName("Deve listar apenas clientes ATIVOS quando nenhum filtro é informado")
+    void deveListarAtivosPorPadrao() {
+        when(clienteGateway.listarPorStatus(StatusCliente.ATIVO)).thenReturn(List.of(clienteExistente));
 
-        List<Cliente> lista = clienteUseCase.listarTodos();
+        List<Cliente> lista = clienteUseCase.listar(null);
 
         assertThat(lista).hasSize(1);
+        verify(clienteGateway).listarPorStatus(StatusCliente.ATIVO);
+    }
+
+    @Test
+    @DisplayName("Deve listar pelo status informado quando há filtro")
+    void deveListarPeloFiltroInformado() {
+        when(clienteGateway.listarPorStatus(StatusCliente.INATIVO)).thenReturn(List.of());
+
+        clienteUseCase.listar(StatusCliente.INATIVO);
+
+        verify(clienteGateway).listarPorStatus(StatusCliente.INATIVO);
     }
 
     @Test
@@ -138,12 +151,78 @@ class ClienteUseCaseUnitTest {
     }
 
     @Test
-    @DisplayName("Deve deletar cliente existente")
-    void deveDeletar() {
+    @DisplayName("Deve inativar o cliente em vez de apagá-lo")
+    void deveInativarClienteExistente() {
         when(clienteGateway.buscarPorId(1L)).thenReturn(Optional.of(clienteExistente));
-        doNothing().when(clienteGateway).deletarPorId(1L);
+        when(clienteGateway.salvar(any(Cliente.class))).thenAnswer(i -> i.getArgument(0));
 
-        assertThatCode(() -> clienteUseCase.deletar(1L)).doesNotThrowAnyException();
-        verify(clienteGateway).deletarPorId(1L);
+        clienteUseCase.inativar(1L);
+
+        ArgumentCaptor<Cliente> captor = ArgumentCaptor.forClass(Cliente.class);
+        verify(clienteGateway).salvar(captor.capture());
+        assertThat(captor.getValue().getStatus()).isEqualTo(StatusCliente.INATIVO);
+    }
+
+    @Test
+    @DisplayName("Inativar cliente já inativo não deve lançar exceção")
+    void deveInativarDeFormaIdempotente() {
+        clienteExistente.inativar();
+        when(clienteGateway.buscarPorId(1L)).thenReturn(Optional.of(clienteExistente));
+        when(clienteGateway.salvar(any(Cliente.class))).thenAnswer(i -> i.getArgument(0));
+
+        assertThatCode(() -> clienteUseCase.inativar(1L)).doesNotThrowAnyException();
+    }
+
+    @Test
+    @DisplayName("Deve lançar exceção ao inativar cliente inexistente")
+    void deveLancarExcecaoAoInativarInexistente() {
+        when(clienteGateway.buscarPorId(99L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> clienteUseCase.inativar(99L))
+                .isInstanceOf(RecursoNaoEncontradoException.class);
+    }
+
+    @Test
+    @DisplayName("Deve criar cliente sempre como ATIVO, ignorando o status recebido")
+    void deveCriarSempreAtivo() {
+        Cliente entrada = novoCliente();
+        entrada.setStatus(StatusCliente.INATIVO);
+        when(clienteGateway.existePorCpfCnpj(anyString())).thenReturn(false);
+        when(clienteGateway.salvar(any(Cliente.class))).thenAnswer(i -> i.getArgument(0));
+
+        clienteUseCase.criar(entrada);
+
+        ArgumentCaptor<Cliente> captor = ArgumentCaptor.forClass(Cliente.class);
+        verify(clienteGateway).salvar(captor.capture());
+        assertThat(captor.getValue().getStatus()).isEqualTo(StatusCliente.ATIVO);
+    }
+
+    @Test
+    @DisplayName("Atualização cadastral não deve alterar o status do cliente")
+    void naoDeveAlterarStatusAoAtualizar() {
+        clienteExistente.inativar();
+        when(clienteGateway.buscarPorId(1L)).thenReturn(Optional.of(clienteExistente));
+        when(clienteGateway.salvar(any(Cliente.class))).thenAnswer(i -> i.getArgument(0));
+
+        Cliente dados = novoCliente();
+        dados.setStatus(StatusCliente.ATIVO);
+
+        clienteUseCase.atualizar(1L, dados);
+
+        ArgumentCaptor<Cliente> captor = ArgumentCaptor.forClass(Cliente.class);
+        verify(clienteGateway).salvar(captor.capture());
+        assertThat(captor.getValue().getStatus()).isEqualTo(StatusCliente.INATIVO);
+    }
+
+    @Test
+    @DisplayName("Deve reativar cliente via alteração de status")
+    void deveAlterarStatus() {
+        clienteExistente.inativar();
+        when(clienteGateway.buscarPorId(1L)).thenReturn(Optional.of(clienteExistente));
+        when(clienteGateway.salvar(any(Cliente.class))).thenAnswer(i -> i.getArgument(0));
+
+        Cliente resultado = clienteUseCase.alterarStatus(1L, StatusCliente.ATIVO);
+
+        assertThat(resultado.getStatus()).isEqualTo(StatusCliente.ATIVO);
     }
 }

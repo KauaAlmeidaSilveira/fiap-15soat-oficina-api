@@ -9,6 +9,7 @@ import br.com.fiap.oficina.core.domain.enums.StatusOS;
 import br.com.fiap.oficina.core.domain.enums.TipoMovimentacao;
 import br.com.fiap.oficina.core.domain.enums.TipoProduto;
 import br.com.fiap.oficina.core.domain.exception.RecursoNaoEncontradoException;
+import br.com.fiap.oficina.core.domain.exception.RegraDeNegocioException;
 import br.com.fiap.oficina.core.gateway.ClienteGateway;
 import br.com.fiap.oficina.core.gateway.EstoqueGateway;
 import br.com.fiap.oficina.core.gateway.MetricasGateway;
@@ -67,6 +68,9 @@ public class OrdemServicoUseCase {
                               String observacoes, List<ItemNovo> itens) {
         Cliente cliente = clienteGateway.buscarPorId(clienteId)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Cliente", clienteId));
+        if (!cliente.estaAtivo()) {
+            throw new RegraDeNegocioException("Não é possível abrir ordem de serviço para cliente inativo.");
+        }
         Veiculo veiculo = veiculoGateway.buscarPorId(veiculoId)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Veículo", veiculoId));
 

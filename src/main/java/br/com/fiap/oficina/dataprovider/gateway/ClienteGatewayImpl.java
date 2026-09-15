@@ -1,6 +1,7 @@
 package br.com.fiap.oficina.dataprovider.gateway;
 
 import br.com.fiap.oficina.core.domain.entity.Cliente;
+import br.com.fiap.oficina.core.domain.enums.StatusCliente;
 import br.com.fiap.oficina.core.domain.exception.RecursoNaoEncontradoException;
 import br.com.fiap.oficina.core.gateway.ClienteGateway;
 import br.com.fiap.oficina.dataprovider.persistence.mapper.ClientePersistenceMapper;
@@ -45,14 +46,8 @@ public class ClienteGatewayImpl implements ClienteGateway {
 
     @Override
     @Transactional(readOnly = true)
-    public List<Cliente> listarTodos() {
-        return clienteRepository.findAll().stream().map(mapper::toDomain).toList();
-    }
-
-    @Override
-    @Transactional
-    public void deletarPorId(Long id) {
-        clienteRepository.deleteById(id);
+    public List<Cliente> listarPorStatus(StatusCliente status) {
+        return clienteRepository.findByStatus(status).stream().map(mapper::toDomain).toList();
     }
 
     @Override

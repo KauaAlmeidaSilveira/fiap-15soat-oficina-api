@@ -1,6 +1,7 @@
 package br.com.fiap.oficina.core.usecase;
 
 import br.com.fiap.oficina.core.domain.entity.Cliente;
+import br.com.fiap.oficina.core.domain.enums.StatusCliente;
 import br.com.fiap.oficina.core.domain.exception.RecursoNaoEncontradoException;
 import br.com.fiap.oficina.core.domain.exception.RegraDeNegocioException;
 import br.com.fiap.oficina.core.gateway.ClienteGateway;
@@ -19,6 +20,7 @@ public class ClienteUseCase {
         if (clienteGateway.existePorCpfCnpj(novo.getCpfCnpj())) {
             throw new RegraDeNegocioException("Já existe um cliente com o CPF/CNPJ: " + novo.getCpfCnpj());
         }
+        novo.ativar();
         return clienteGateway.salvar(novo);
     }
 
@@ -32,8 +34,8 @@ public class ClienteUseCase {
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Cliente não encontrado com CPF/CNPJ: " + cpfCnpj));
     }
 
-    public List<Cliente> listarTodos() {
-        return clienteGateway.listarTodos();
+    public List<Cliente> listar(StatusCliente filtro) {
+        return clienteGateway.listarPorStatus(filtro != null ? filtro : StatusCliente.ATIVO);
     }
 
     public Cliente atualizar(Long id, Cliente dados) {
@@ -51,8 +53,19 @@ public class ClienteUseCase {
         return clienteGateway.salvar(existente);
     }
 
-    public void deletar(Long id) {
-        buscarPorId(id);
-        clienteGateway.deletarPorId(id);
+    public void inativar(Long id) {
+        Cliente cliente = buscarPorId(id);
+        cliente.inativar();
+        clienteGateway.salvar(cliente);
+    }
+
+    public Cliente alterarStatus(Long id, StatusCliente status) {
+        Cliente cliente = buscarPorId(id);
+        if (status == StatusCliente.ATIVO) {
+            cliente.ativar();
+        } else {
+            cliente.inativar();
+        }
+        return clienteGateway.salvar(cliente);
     }
 }

@@ -1,6 +1,7 @@
 package br.com.fiap.oficina.core.gateway;
 
 import br.com.fiap.oficina.core.domain.entity.Cliente;
+import br.com.fiap.oficina.core.domain.enums.StatusCliente;
 
 import java.util.List;
 import java.util.Optional;
@@ -13,9 +14,7 @@ public interface ClienteGateway {
 
     Optional<Cliente> buscarPorCpfCnpj(String cpfCnpj);
 
-    List<Cliente> listarTodos();
-
-    void deletarPorId(Long id);
+    List<Cliente> listarPorStatus(StatusCliente status);
 
     boolean existePorCpfCnpj(String cpfCnpj);
 }

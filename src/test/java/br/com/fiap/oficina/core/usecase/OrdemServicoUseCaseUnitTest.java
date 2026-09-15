@@ -5,6 +5,7 @@ import br.com.fiap.oficina.core.domain.entity.OrdemServico;
 import br.com.fiap.oficina.core.domain.entity.OsItem;
 import br.com.fiap.oficina.core.domain.entity.Produto;
 import br.com.fiap.oficina.core.domain.entity.Veiculo;
+import br.com.fiap.oficina.core.domain.enums.StatusCliente;
 import br.com.fiap.oficina.core.domain.enums.StatusOS;
 import br.com.fiap.oficina.core.domain.enums.TipoMovimentacao;
 import br.com.fiap.oficina.core.domain.enums.TipoProduto;
@@ -71,7 +72,7 @@ class OrdemServicoUseCaseUnitTest {
         useCase = new OrdemServicoUseCase(osGateway, clienteGateway, veiculoGateway, produtoGateway,
                 estoqueGateway, tokenGateway, notificacaoGateway, metricasGateway, "http://localhost:8080");
 
-        cliente = Cliente.builder().id(1L).nome("João").build();
+        cliente = Cliente.builder().id(1L).nome("João").status(StatusCliente.ATIVO).build();
         veiculo = Veiculo.builder().id(1L).placa("ABC1234").marca("Toyota").modelo("Corolla").ano(2020).build();
         peca = Produto.builder().id(1L).nome("Filtro").tipo(TipoProduto.PECA)
                 .precoUnitario(new BigDecimal("50.00")).ativo(true).build();
@@ -109,6 +110,17 @@ class OrdemServicoUseCaseUnitTest {
                 new ItemNovo(1L, 1, new BigDecimal("200.00"), null)));
 
         assertThat(criada.getValorTotal()).isEqualByComparingTo(new BigDecimal("300.00"));
+    }
+
+    @Test
+    @DisplayName("Não deve abrir OS para cliente inativo")
+    void naoDeveCriarOsParaClienteInativo() {
+        cliente.inativar();
+        when(clienteGateway.buscarPorId(1L)).thenReturn(Optional.of(cliente));
+
+        assertThatThrownBy(() -> useCase.criar(1L, 1L, "Motor falhando", null, List.of()))
+                .isInstanceOf(RegraDeNegocioException.class)
+                .hasMessageContaining("inativo");
     }
 
     @Test

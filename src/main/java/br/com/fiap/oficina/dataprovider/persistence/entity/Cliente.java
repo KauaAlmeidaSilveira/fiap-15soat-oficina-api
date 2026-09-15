@@ -1,5 +1,6 @@
 package br.com.fiap.oficina.dataprovider.persistence.entity;
 
+import br.com.fiap.oficina.core.domain.enums.StatusCliente;
 import br.com.fiap.oficina.core.domain.enums.TipoDocumento;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -13,6 +14,7 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
+import org.hibernate.annotations.ColumnDefault;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -52,6 +54,11 @@ public class Cliente {
     @Column(length = 255)
     private String endereco;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    @ColumnDefault("'ATIVO'")
+    private StatusCliente status;
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime criadoEm;
 
@@ -66,6 +73,9 @@ public class Cliente {
     @PrePersist
     protected void onCreate() {
         criadoEm = LocalDateTime.now();
+        if (status == null) {
+            status = StatusCliente.ATIVO;
+        }
     }
 
     @PreUpdate
