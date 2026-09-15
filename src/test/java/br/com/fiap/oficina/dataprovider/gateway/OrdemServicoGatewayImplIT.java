@@ -14,9 +14,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.DirtiesContext;
 
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.within;
 
 @SpringBootTest
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
@@ -60,8 +62,10 @@ class OrdemServicoGatewayImplIT {
 
         OrdemServico relida = ordemServicoGateway.buscarPorId(os.getId()).orElseThrow();
         assertThat(relida.getStatus()).isEqualTo(StatusOS.EM_DIAGNOSTICO);
+        // No Linux LocalDateTime.now() tem precisao de nanossegundos, mas a coluna TIMESTAMP
+        // guarda so microssegundos: o valor relido do banco nunca e identico ao da memoria.
         assertThat(relida.getStatusAlteradoEm())
                 .isNotNull()
-                .isEqualTo(os.getStatusAlteradoEm());
+                .isCloseTo(os.getStatusAlteradoEm(), within(1, ChronoUnit.MICROS));
     }
 }
