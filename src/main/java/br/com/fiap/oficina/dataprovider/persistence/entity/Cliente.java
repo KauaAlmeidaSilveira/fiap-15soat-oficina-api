@@ -59,6 +59,9 @@ public class Cliente {
     @ColumnDefault("'ATIVO'")
     private StatusCliente status;
 
+    @Column(name = "senha_hash", length = 60)
+    private String senhaHash;
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime criadoEm;
 
