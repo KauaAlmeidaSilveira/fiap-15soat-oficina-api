@@ -1,0 +1,133 @@
+---
+config:
+  theme: neutral
+  er:
+    fontSize: 15
+---
+erDiagram
+    direction LR
+
+    cliente {
+        bigint id PK
+        varchar_100 nome "not null"
+        varchar_14 cpf_cnpj UK "not null, unique"
+        varchar tipo_documento "not null - enum CPF, CNPJ"
+        varchar_20 telefone
+        varchar_150 email
+        varchar_255 endereco
+        varchar_20 status "not null, default ATIVO - enum ATIVO, INATIVO"
+        timestamp criado_em "not null"
+        timestamp atualizado_em
+    }
+
+    veiculo {
+        bigint id PK
+        varchar_8 placa UK "not null, unique"
+        varchar_50 marca "not null"
+        varchar_80 modelo "not null"
+        integer ano "not null"
+        varchar_20 cor
+        varchar_17 chassi
+        timestamp criado_em "not null"
+        timestamp atualizado_em
+    }
+
+    cliente_veiculo {
+        bigint id PK
+        bigint cliente_id FK "not null - unique pair with veiculo_id"
+        bigint veiculo_id FK "not null - unique pair with cliente_id"
+        timestamp vinculado_em "not null"
+    }
+
+    ordem_servico {
+        bigint id PK
+        varchar_20 numero UK "not null, unique"
+        bigint cliente_id FK "not null"
+        bigint veiculo_id FK "not null"
+        uuid user_id FK "nullable"
+        varchar status "not null, default RECEBIDA - enum RECEBIDA, EM_DIAGNOSTICO, AGUARDANDO_APROVACAO, REPROVADA, EM_EXECUCAO, FINALIZADA, ENTREGUE"
+        varchar_500 descricao_problema
+        varchar_500 observacoes
+        decimal_10_2 valor_total "default 0"
+        timestamp data_inicio
+        timestamp data_fim
+        timestamp data_entrega
+        timestamp data_aprovacao
+        timestamp status_alterado_em
+        timestamp criado_em "not null"
+        timestamp atualizado_em
+    }
+
+    os_item {
+        bigint id PK
+        bigint ordem_servico_id FK "not null"
+        bigint produto_id FK "not null"
+        integer quantidade "not null"
+        decimal_10_2 preco_unitario "not null"
+        varchar_255 observacao
+        timestamp criado_em "not null"
+    }
+
+    produto {
+        bigint id PK
+        varchar_100 nome "not null"
+        varchar_255 descricao
+        varchar tipo "not null - enum PECA, SERVICO"
+        decimal_10_2 preco_unitario "not null"
+        varchar_20 unidade_medida
+        boolean ativo "not null, default true"
+        timestamp criado_em "not null"
+        timestamp atualizado_em
+    }
+
+    saldo_estoque {
+        bigint id PK
+        bigint produto_id FK,UK "not null, unique"
+        integer quantidade "not null"
+        timestamp atualizado_em "not null"
+    }
+
+    movimentacao_estoque {
+        bigint id PK
+        bigint produto_id FK "not null"
+        varchar tipo "not null - enum ENTRADA, SAIDA"
+        integer quantidade "not null"
+        varchar_255 motivo
+        timestamp criado_em "not null"
+        bigint ordem_servico_id FK "nullable"
+    }
+
+    users {
+        uuid id PK
+        varchar username UK "not null, unique"
+        varchar password "not null"
+    }
+
+    roles {
+        bigint role_id PK
+        varchar name
+    }
+
+    users_roles {
+        uuid user_id FK "not null"
+        bigint role_id FK "not null"
+    }
+
+    cliente ||--o{ cliente_veiculo : possui
+    veiculo ||--o{ cliente_veiculo : possui
+    cliente ||--o{ ordem_servico : abre
+    veiculo ||--o{ ordem_servico : "e atendido em"
+    users |o--o{ ordem_servico : "processa (opcional)"
+    ordem_servico ||--o{ os_item : contem
+    produto ||--o{ os_item : "e usado em"
+    produto ||--o| saldo_estoque : "possui (so PECA)"
+    produto ||--o{ movimentacao_estoque : "tem historico"
+    ordem_servico |o--o{ movimentacao_estoque : "origina (opcional)"
+    users ||--o{ users_roles : possui
+    roles ||--o{ users_roles : "atribuida a"
+
+    classDef oficina fill:#DAE8FC,stroke:#6C8EBF,color:#1A1A1A
+    classDef auth fill:#E1D5F5,stroke:#9673A6,color:#1A1A1A
+
+    class cliente,veiculo,cliente_veiculo,ordem_servico,os_item,produto,saldo_estoque,movimentacao_estoque oficina
+    class users,roles,users_roles auth
