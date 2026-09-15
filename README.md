@@ -120,8 +120,17 @@ aponta para ele. A operação é idempotente — inativar um cliente já inativo
 
 ## Segurança
 
+A API **não emite tokens de sessão**: o login acontece na Lambda `oficina-auth`
+(repositório [`fiap-15soat-oficina-lambda-auth`](https://github.com/KauaAlmeidaSilveira/fiap-15soat-oficina-lambda-auth)),
+exposta pelo mesmo API Gateway que encaminha as chamadas para esta API. O Gateway valida o JWT
+(RS256, `aud = oficina-api`, `iss` = URL do Gateway) e a API valida de novo.
+
+| Quem | Como autentica | Acessa |
+|---|---|---|
+| Funcionário | `POST /auth/funcionario` com e-mail + senha | `/api/**` conforme a role (`ADMIN`, `RECEPCAO`, `OPERADOR`) |
+| Cliente | `POST /auth/cliente` com CPF + senha (senha criada em `POST /auth/cliente/primeiro-acesso`) | somente `GET /api/minhas-ordens-servico` e `GET /api/minhas-ordens-servico/{id}` |
+
 Todos os endpoints exigem **JWT Bearer token**, exceto:
-- `POST /api/auth/login`
 - `GET /aprovacao-os` — link de aprovação/recusa de orçamento enviado por e-mail (token próprio, não JWT de sessão)
 - `GET /actuator/health` — health check
 - Swagger UI (`/swagger-ui.html`, `/v3/api-docs/**`)
@@ -231,7 +240,7 @@ Pré-requisito: os recursos dos repositórios de infraestrutura (`fiap-15soat-of
 | `DB_PASSWORD` | Mesma senha usada no `terraform.tfvars` | Definida por você |
 | `JWT_PRIVATE_KEY` / `JWT_PUBLIC_KEY` | Conteúdo (PEM) do par de chaves RSA — o mesmo par para todas as réplicas, ver [`k8s/README.md`](k8s/README.md) | Gerado uma vez via `openssl` |
 | `GMAIL_SMTP_USERNAME` / `GMAIL_SMTP_PASSWORD` | Endereço Gmail remetente e sua App Password | Conta Google → Segurança → Verificação em duas etapas → Senhas de app |
-| `APP_PUBLIC_BASE_URL` | URL pública da aplicação usada nos links de aprovação do e-mail (ex: `http://<elb-dns>`) | `kubectl get service oficina-api -n oficina -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'` após o primeiro deploy |
+| `APP_PUBLIC_BASE_URL` | URL do API Gateway — usada nos links do e-mail de aprovação **e** como emissor esperado dos tokens (`JWT_ISSUER`) | Output `api_gateway_url` do repositório `fiap-15soat-oficina-lambda-auth` |
 
 ---
 
@@ -301,21 +310,36 @@ mvn verify
 
 ## Endpoints
 
-### Autenticação — `/api/auth`
+### Autenticação
+
+O login fica na Lambda, atrás do API Gateway (`<gateway>` = output `api_gateway_url` do `lambda-auth`).
 
 | Método | Endpoint | Autenticação | Descrição |
 |--------|----------|-------------|-----------|
-| POST | `/api/auth/login` | Pública | Autentica e retorna JWT |
+| POST | `<gateway>/auth/funcionario` | Pública | Login de funcionário, devolve JWT de 8 h |
+| POST | `<gateway>/auth/cliente` | Pública | Login de cliente por CPF + senha, devolve JWT de 1 h |
+| POST | `<gateway>/auth/cliente/primeiro-acesso` | Pública | Cliente ativo define a senha (CPF + e-mail do cadastro) |
 | POST | `/api/auth/register` | ADMIN | Cadastra novo usuário (role OPERADOR) |
 
-**Login — exemplo:**
+**Login de funcionário — exemplo:**
 ```json
 // Request
-{ "username": "kaua@gmail.com", "password": "Admin@123" }
+{ "username": "kaua@gmail.com", "senha": "Admin@123" }
 
 // Response
 { "token": "<JWT>", "expiresIn": 28800 }
 ```
+
+### Minhas ordens de serviço — `/api/minhas-ordens-servico` (role `CLIENTE`)
+
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| GET | `/api/minhas-ordens-servico` | Lista as OS do cliente do token |
+| GET | `/api/minhas-ordens-servico/{id}` | Detalha uma OS do cliente do token (OS de outro cliente → 404) |
+
+**Rodando localmente**, sem Gateway: gere um token com o script do `lambda-auth`
+(`npm run token:local -- --sub kaua@gmail.com --roles ADMIN`), que assina com a mesma
+`jwt.private.key` e `iss = http://localhost:8080`.
 
 Usar o token retornado no header de todas as demais requisições:
 ```
