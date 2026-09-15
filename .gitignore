@@ -59,3 +59,10 @@ crash.log
 # Credenciais SMTP locais - nunca versionar
 # Use .env.example como template
 .env
+
+# macOS
+.DS_Store
+
+# Evidencias de configuracao (prints de tela etc.) usadas so para acompanhamento
+# interno do checklist - nao sao documentacao do projeto, nao versionar.
+docs/evidencia-colaborador-soat/

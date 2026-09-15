@@ -436,7 +436,14 @@ fiap-15soat-oficina-api/
 │               └── token/              # AprovacaoTokenGatewayImplUnitTest
 ├── k8s/                       # Manifestos Kubernetes (deploy no EKS) — ver k8s/README.md
 ├── observability/             # Terraform do New Relic (dashboards + alertas)
-├── docs/                      # Diagramas de arquitetura (componentes + infraestrutura/deploy)
+├── docs/                      # Diagramas de arquitetura, ADRs e RFCs
+│   ├── adr/                   # Architecture Decision Records
+│   ├── rfc/                   # Request for Comments (decisões técnicas)
+│   ├── sequencia-abertura-os.md
+│   ├── diagrama-er.mmd        # Fonte Mermaid do diagrama ER
+│   ├── diagrama-er.png        # Diagrama ER renderizado
+│   ├── requisitos-fase3.md    # Espelho em texto do PDF do desafio
+│   └── modelo-relacional.md   # Explicação dos relacionamentos (ER)
 ├── postman/                   # Collection e environment do Postman
 ├── Dockerfile
 ├── docker-compose.yml
