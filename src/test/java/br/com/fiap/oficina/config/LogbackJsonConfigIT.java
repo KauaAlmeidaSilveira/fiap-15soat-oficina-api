@@ -3,9 +3,11 @@ package br.com.fiap.oficina.config;
 import br.com.fiap.oficina.entrypoint.filter.CorrelationIdFilter;
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.classic.spi.LoggingEvent;
+import ch.qos.logback.core.Appender;
 import ch.qos.logback.core.ConsoleAppender;
-import ch.qos.logback.core.encoder.Encoder;
+import com.newrelic.logging.logback.NewRelicAsyncAppender;
 import net.logstash.logback.encoder.LogstashEncoder;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -33,26 +35,30 @@ import static org.assertj.core.api.Assertions.assertThat;
 })
 class LogbackJsonConfigIT {
 
-    @Test
-    @DisplayName("Perfil default deve escrever os logs com o encoder JSON")
-    void perfilDefaultDeveUsarEncoderJson() {
+    private static Appender<ILoggingEvent> appenderDaRaiz() {
         Logger root = (Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
+        return root.getAppender("NEWRELIC_ASYNC");
+    }
 
-        var appender = root.getAppender("JSON");
-        assertThat(appender)
-                .as("o appender JSON deve estar ativo no perfil default")
-                .isInstanceOf(ConsoleAppender.class);
+    @Test
+    @DisplayName("Perfil default deve passar os logs pelo appender do New Relic antes do JSON")
+    void perfilDefaultDeveEnvolverJsonNoAppenderDoNewRelic() {
+        Appender<ILoggingEvent> raiz = appenderDaRaiz();
+        assertThat(raiz)
+                .as("o NewRelicAsyncAppender copia trace.id/span.id do agente para o MDC")
+                .isInstanceOf(NewRelicAsyncAppender.class);
 
-        Encoder<?> encoder = ((ConsoleAppender<?>) appender).getEncoder();
-        assertThat(encoder).isInstanceOf(LogstashEncoder.class);
+        Appender<ILoggingEvent> json = ((NewRelicAsyncAppender) raiz).getAppender("JSON");
+        assertThat(json).isInstanceOf(ConsoleAppender.class);
+        assertThat(((ConsoleAppender<ILoggingEvent>) json).getEncoder()).isInstanceOf(LogstashEncoder.class);
     }
 
     @Test
     @DisplayName("O correlation id do MDC deve sair dentro do JSON do log")
     void correlationIdDeveSairNoJson() {
-        Logger root = (Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
+        NewRelicAsyncAppender raiz = (NewRelicAsyncAppender) appenderDaRaiz();
         LogstashEncoder encoder =
-                (LogstashEncoder) ((ConsoleAppender<?>) root.getAppender("JSON")).getEncoder();
+                (LogstashEncoder) ((ConsoleAppender<ILoggingEvent>) raiz.getAppender("JSON")).getEncoder();
 
         LoggingEvent evento = new LoggingEvent();
         evento.setLoggerName("teste");
