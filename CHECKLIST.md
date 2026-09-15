@@ -33,7 +33,7 @@ Nomenclatura definida, mantendo o prefixo já existente:
 
 | # | Repositório | Papel | Situação |
 |---|---|---|---|
-| 1 | `fiap-15soat-oficina-api` | Aplicação Java, manifestos K8s, observabilidade | existe, **reorganizado** |
+| 1 | `fiap-15soat-oficina-api` | Aplicação Java, manifestos K8s, observabilidade | **criado no GitHub** (`KauaAlmeidaSilveira`) existe, **reorganizado** |
 | 2 | `fiap-15soat-oficina-infra-k8s` | VPC, EKS, ECR | **no GitHub** (`JulioNCavalcanti`), commit `a8cceba` |
 | 3 | `fiap-15soat-oficina-infra-db` | RDS PostgreSQL | **no GitHub** (`JulioNCavalcanti`), commit `d4f52e9` |
 | 4 | `fiap-15soat-oficina-lambda-auth` | Lambda de autenticação por CPF | **criado no GitHub** (`KauaAlmeidaSilveira`), repositório vazio — sem commits |
@@ -194,7 +194,6 @@ Cada critério (propósito, tecnologias, passos, diagrama) é checado por reposi
 ## Higiene do repositório
 
 - [x] Chaves JWT ignoradas em qualquer diretório — a regra antiga só cobria `src/main/resources/`, e as chaves geradas na raiz escapavam. Confirmado que nenhuma chave chegou a ser rastreada em commit algum.
-- [ ] **Documentação não commitada** — `CLAUDE.md`, `CHECKLIST.md` e `docs/superpowers/` seguem não rastreados. Merecem um commit `docs:` próprio.
 - [x] Corrigir a referência à pasta `postman/` no `README.md` — pasta criada com collection + environment reais; a referência já estava correta, só faltavam os arquivos.
 - [x] `.gitignore` do Terraform generalizado — os padrões eram `infra/terraform.tfvars`, `infra/.terraform/`; agora casam em qualquer diretório, mesma correção aplicada às chaves JWT.
 - [x] O `CHECKLIST.md` da Fase 2 (que referenciava `infra/eks.tf`, `infra/rds.tf` etc., já removidos deste repo) foi substituído por este arquivo na renomeação — não existe mais como arquivo separado. Conteúdo antigo continua recuperável via git (`git show 98c5386:CHECKLIST.md`), nada commitado foi perdido.
