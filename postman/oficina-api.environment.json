@@ -1,0 +1,65 @@
+{
+	"id": "2d9fa130-e089-48ee-9d76-bae1801b3c3d",
+	"name": "Oficina Mecânica - Local",
+	"values": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8080",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "token",
+			"value": "",
+			"type": "secret",
+			"description": "Preenchido automaticamente após executar Auth > Login",
+			"enabled": true
+		},
+		{
+			"key": "cliente_id",
+			"value": "1",
+			"type": "default",
+			"description": "DataLoader: 1=João da Silva | 2=Maria Oliveira | 3=Transportes Rápidos Ltda",
+			"enabled": true
+		},
+		{
+			"key": "veiculo_id",
+			"value": "1",
+			"type": "default",
+			"description": "DataLoader: 1=Toyota Corolla ABC1234 | 2=Hyundai HB20 DEF5678 | 3=Mercedes Sprinter XYZ9A01",
+			"enabled": true
+		},
+		{
+			"key": "os_id",
+			"value": "1",
+			"type": "default",
+			"description": "DataLoader: 1=OS do João/Corolla (AGUARDANDO_APROVACAO) | 2=OS da Empresa/Sprinter (RECEBIDA)",
+			"enabled": true
+		},
+		{
+			"key": "os_item_id",
+			"value": "1",
+			"type": "default",
+			"description": "ID do item da OS (não confundir com produto_id). Atualizado automaticamente após 'Adicionar Item à OS'; usado por 'Remove Item à OS'.",
+			"enabled": true
+		},
+		{
+			"key": "aprovacao_token",
+			"value": "",
+			"type": "default",
+			"description": "Token de uso único do link de aprovação por e-mail (/aprovacao-os). Gerado pela API ao avançar uma OS para AGUARDANDO_APROVACAO — não tem valor fixo, precisa pegar de um envio real (log da aplicação ou e-mail recebido).",
+			"enabled": true
+		},
+		{
+			"key": "produto_id",
+			"value": "1",
+			"type": "default",
+			"description": "DataLoader peças: 1=Filtro de Óleo | 2=Filtro de Ar | 3=Óleo Motor 5W30 | 4=Pastilha de Freio | 5=Correia Dentada | Serviços: 6=Troca de Óleo | 7=Alinhamento | 8=Revisão de Freios | 9=Troca de Correia",
+			"enabled": true
+		}
+	],
+	"color": null,
+	"_postman_variable_scope": "environment",
+	"_postman_exported_at": "2026-09-15T01:31:04.858Z",
+	"_postman_exported_using": "Postman/12.28.0"
+}

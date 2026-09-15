@@ -250,8 +250,6 @@ Os arquivos estão em [`postman/`](postman/):
 3. Execute **Auth → Login como ADMIN** — o token é salvo automaticamente em `{{token}}`
 4. Use os demais endpoints normalmente
 
-> Link direto da collection no Postman: https://go.postman.co/collection/53473425-944a4c94-95cd-4d59-b903-a5ea1c87b820
-
 ---
 
 ## Documentação da API (Swagger)
