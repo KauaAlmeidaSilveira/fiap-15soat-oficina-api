@@ -40,9 +40,9 @@ Nomenclatura definida, mantendo o prefixo já existente:
 - [x] **`infra-k8s` e `infra-db` criados no GitHub e pushados** — `git init` em `main`, commit inicial, remote ligado. Local e remoto conferidos no mesmo hash, sem divergência
 - [x] **README de `infra-k8s` e `infra-db`** — propósito, tecnologias, passos, diagrama da arquitetura e tabela de outputs. Documentam também as restrições do AWS Academy e a ordem de destruição (banco antes da VPC)
 - [ ] **Criar o repositório `lambda-auth`** — último dos quatro
-- [ ] **Criar o bucket S3 `fiap-15soat-oficina-tfstate` e a tabela DynamoDB `fiap-15soat-oficina-tflock`** — os três `versions.tf` já apontam para eles; precisam existir antes do primeiro `terraform init` com backend
+- [x] **Criar o bucket S3 `fiap-15soat-oficina-tfstate` e a tabela DynamoDB `fiap-15soat-oficina-tflock`** (conta `647776094260`, 15/09/2026) — os três `versions.tf` já apontam para eles; precisam existir antes do primeiro `terraform init` com backend
 - [x] **Pipeline de CI/CD nos dois repos de infra** — `.github/workflows/terraform.yml` em cada um (`8992338` e `76767b3`): `fmt`/`validate`/`plan` no PR com o plano comentado no próprio PR, `apply` no push para `main`. Validação roda sem backend, então sobrevive a credencial expirada; `apply` atrelado ao Environment `producao`; `concurrency group` evita disputa pelo lock do DynamoDB; no `infra-db` a senha entra como `TF_VAR_db_password`, sem virar arquivo no runner
-- [ ] Cadastrar os secrets nos dois repos: `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_SESSION_TOKEN` e, no `infra-db`, `DB_PASSWORD`
+- [x] Cadastrar os secrets nos dois repos: `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_SESSION_TOKEN` e, no `infra-db`, `DB_PASSWORD`
 - [ ] Configurar revisor obrigatório no Environment `producao` de cada repo de infra
 - [ ] Pipeline de CI/CD do `lambda-auth` — quando o repositório existir
 - [x] `.terraform.lock.hcl` do `observability/` gerado e commitado em `fbb1649` — trava só o provider `newrelic`
@@ -99,17 +99,28 @@ Design em `docs/superpowers/specs/2026-09-13-observabilidade-newrelic-design.md`
 - [x] URL e estrutura do agente conferidas contra o servidor de download (9.4.0 é a mais recente)
 - [x] User API key (`NRAK-`) validada — autentica e enxerga a conta `7428180`
 
-### Pendente para o teste
+### Validação com a infraestrutura no ar (15/09/2026)
 
-| # | O quê | Quem | Depende de |
-|---|---|---|---|
-| 1 | Definir `alertas_email` em `infra/terraform.tfvars` | vocês | — |
-| 2 | `terraform apply` dos dashboards e alertas | — | item 1 |
-| 3 | Cadastrar `NEW_RELIC_LICENSE_KEY` nos GitHub Secrets | vocês | — |
-| 4 | Confirmar que os nomes das métricas batem com as queries | — | app rodando |
-| 5 | `helm upgrade --install` do `nri-bundle` | vocês | EKS no ar |
-| 6 | Confirmar `trace.id` do agente chegando ao MDC | — | app com license key |
-| 7 | Fechar a exposição pública de `/actuator/prometheus` | decisão | — |
+| # | O quê | Estado |
+|---|---|---|
+| 1 | `alertas_email` em `observability/terraform.tfvars` | ✅ |
+| 2 | `terraform apply` dos dashboards e alertas | ✅ 9 recursos na conta `7428180` |
+| 3 | `NEW_RELIC_LICENSE_KEY` nos GitHub Secrets | ✅ agente conectado, `appName = oficina-api` |
+| 4 | Nomes das métricas batem com as queries | ✅ `oficina_os_*` chegam idênticos; OS de teste 5 e 6 |
+| 5 | `nri-bundle` via Helm | ✅ 9 pods, métricas Prometheus, K8s e logs chegando |
+| 6 | `trace.id` do agente no JSON | ✅ `NewRelic:trace.id`/`span.id` via `NewRelicAsyncAppender` (`c87dfe4`) |
+| 7 | Fechar a exposição pública de `/actuator/prometheus` | ❌ decisão em aberto — responde 200 pelo ELB |
+
+Correções que a validação exigiu:
+
+- [x] Painel "tempo médio por status" agrupava também códigos HTTP (`FACET status` colidia com `http_server_requests`) — filtrado por `metricName` (`a4a3ea7`)
+- [x] `trace.id` não chegava ao MDC: o agente sozinho não injeta — adicionado `com.newrelic.logging:logback` (`c87dfe4`)
+- [x] JSON malformado devolvia 500 — `HttpMessageNotReadableException` agora vira 400 (`b3d80ee`)
+
+Comportamentos esperados, não defeitos:
+
+- O `nri-prometheus` converte counters em delta: o primeiro valor de cada série se perde (actuator mostra 2 OS, New Relic mostra 1)
+- Queries com `SINCE 1 day ago` voltam vazias nas primeiras horas de dados; janelas de 1h/3h já respondem
 
 **Só o item 5 precisa de AWS.** O caminho mais curto para destravar os itens 4 e 6:
 
