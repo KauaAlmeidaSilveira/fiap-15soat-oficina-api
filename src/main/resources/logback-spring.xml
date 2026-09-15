@@ -24,8 +24,13 @@
                 <customFields>{"service.name":"${appName}"}</customFields>
             </encoder>
         </appender>
-        <root level="INFO">
+        <!-- O agente nao coloca trace.id/span.id no MDC sozinho: este appender le os dados na
+             thread da requisicao e os grava como NewRelic:trace.id / NewRelic:span.id. -->
+        <appender name="NEWRELIC_ASYNC" class="com.newrelic.logging.logback.NewRelicAsyncAppender">
             <appender-ref ref="JSON"/>
+        </appender>
+        <root level="INFO">
+            <appender-ref ref="NEWRELIC_ASYNC"/>
         </root>
         <logger name="org.hibernate.SQL" level="WARN"/>
         <logger name="org.hibernate.orm.jdbc.bind" level="WARN"/>

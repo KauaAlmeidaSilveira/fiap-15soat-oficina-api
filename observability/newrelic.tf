@@ -39,7 +39,9 @@ resource "newrelic_one_dashboard" "oficina_operacao" {
 
       nrql_query {
         account_id = var.newrelic_account_id
-        query      = "SELECT sum(oficina_os_tempo_status_seconds_sum) / sum(oficina_os_tempo_status_seconds_count) / 60 AS 'minutos' FROM Metric FACET status TIMESERIES AUTO"
+        # O filtro por metricName e obrigatorio: sem ele, FACET status tambem agrupa o label
+        # status (codigo HTTP) das metricas http_server_requests.
+        query = "SELECT sum(oficina_os_tempo_status_seconds_sum) / sum(oficina_os_tempo_status_seconds_count) / 60 AS 'minutos' FROM Metric WHERE metricName IN ('oficina_os_tempo_status_seconds_sum', 'oficina_os_tempo_status_seconds_count') FACET status TIMESERIES AUTO"
       }
     }
 

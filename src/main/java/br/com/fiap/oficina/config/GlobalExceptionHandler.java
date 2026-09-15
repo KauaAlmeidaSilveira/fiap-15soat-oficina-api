@@ -6,6 +6,7 @@ import br.com.fiap.oficina.core.domain.exception.RegraDeNegocioException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -49,6 +50,15 @@ public class GlobalExceptionHandler {
         ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, "Dados inválidos na requisição.");
         pd.setTitle("Erro de validação");
         pd.setProperty("campos", erros);
+        pd.setProperty("timestamp", LocalDateTime.now());
+        return pd;
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ProblemDetail handleMensagemIlegivel(HttpMessageNotReadableException ex) {
+        log.warn("Corpo da requisição ilegível: {}", ex.getMessage());
+        ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, "O corpo da requisição não é um JSON válido.");
+        pd.setTitle("Requisição malformada");
         pd.setProperty("timestamp", LocalDateTime.now());
         return pd;
     }

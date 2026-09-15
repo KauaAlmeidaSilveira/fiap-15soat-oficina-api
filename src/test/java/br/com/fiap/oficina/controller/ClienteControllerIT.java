@@ -283,4 +283,15 @@ class ClienteControllerIT {
         mockMvc.perform(delete("/api/clientes/1"))
                 .andExpect(status().isForbidden());
     }
+
+    @Test
+    @DisplayName("Deve retornar 400 ao receber JSON malformado")
+    void deveRetornar400AoReceberJsonMalformado() throws Exception {
+        mockMvc.perform(post("/api/clientes")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"nome\": \"Maria\", \"cpfCnpj\": ,}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.title").value("Requisição malformada"))
+                .andExpect(jsonPath("$.detail").value("O corpo da requisição não é um JSON válido."));
+    }
 }
