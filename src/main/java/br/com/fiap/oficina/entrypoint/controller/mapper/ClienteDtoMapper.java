@@ -10,6 +10,7 @@ import org.mapstruct.Mapping;
 public interface ClienteDtoMapper {
 
     @Mapping(target = "id", ignore = true)
+    @Mapping(target = "status", ignore = true)
     @Mapping(target = "criadoEm", ignore = true)
     @Mapping(target = "atualizadoEm", ignore = true)
     Cliente toDomain(ClienteRequest request);

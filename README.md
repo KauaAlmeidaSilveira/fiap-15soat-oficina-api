@@ -1,7 +1,10 @@
 # Oficina Mecânica — Sistema Integrado de Atendimento
 
-> Tech Challenge — FIAP SOAT Fase 2
-> Spring Boot 3.2 · Java 21 · Clean Architecture · PostgreSQL / H2
+> Tech Challenge — FIAP SOAT Fase 3
+> Spring Boot 3.2 · Java 21 · Clean Architecture · PostgreSQL / H2 · New Relic
+>
+> Um de quatro repositórios: a aplicação (este), `fiap-15soat-oficina-infra-k8s`,
+> `fiap-15soat-oficina-infra-db` e `fiap-15soat-oficina-lambda-auth`.
 
 ---
 
@@ -80,7 +83,7 @@ br.com.fiap.oficina
 
 | Entidade | Descrição |
 |---|---|
-| `Cliente` | Pessoa física (CPF) ou jurídica (CNPJ) |
+| `Cliente` | Pessoa física (CPF) ou jurídica (CNPJ), com status `ATIVO`/`INATIVO` |
 | `Veiculo` | Veículo com placa, marca, modelo, ano, cor e chassi |
 | `OrdemServico` | OS com status, itens e valor total calculado |
 | `OsItem` | Item da OS (produto + quantidade + preço unitário) |
@@ -99,6 +102,19 @@ RECEBIDA → EM_DIAGNOSTICO → AGUARDANDO_APROVACAO → EM_EXECUCAO → FINALIZ
 ```
 
 Ao entrar em `AGUARDANDO_APROVACAO` o sistema envia automaticamente um e-mail ao cliente com os links de aprovação e recusa.
+
+### Ciclo de vida do cliente
+
+O `Cliente` tem status `ATIVO` ou `INATIVO`. Todo cliente nasce `ATIVO` e **não há exclusão física**:
+`DELETE /api/clientes/{id}` inativa o registro, preservando o histórico de ordens de serviço que
+aponta para ele. A operação é idempotente — inativar um cliente já inativo devolve 204 do mesmo jeito.
+
+- A listagem padrão (`GET /api/clientes`) traz apenas os `ATIVO`; use `?status=INATIVO` para os demais.
+- Busca por id e por CPF/CNPJ devolvem o cliente em qualquer status, com o campo `status` no corpo —
+  é o que permite distinguir "não existe" de "existe, mas inativo".
+- **Não é possível abrir ordem de serviço para cliente inativo** (422).
+- A reativação é feita por `PATCH /api/clientes/{id}/status`, restrito a `ADMIN`. Atualização
+  cadastral (`PUT`) nunca altera o status.
 
 ---
 
@@ -314,12 +330,13 @@ Authorization: Bearer <token>
 
 | Método | Endpoint | Roles | Descrição |
 |--------|----------|-------|-----------|
-| POST | `/api/clientes` | ADMIN, RECEPCAO | Cadastrar cliente |
-| GET | `/api/clientes` | Autenticado | Listar todos |
-| GET | `/api/clientes/{id}` | Autenticado | Buscar por ID |
-| GET | `/api/clientes/cpf-cnpj/{cpfCnpj}` | Autenticado | Buscar por CPF/CNPJ |
-| PUT | `/api/clientes/{id}` | ADMIN, RECEPCAO | Atualizar |
-| DELETE | `/api/clientes/{id}` | ADMIN, RECEPCAO | Deletar |
+| POST | `/api/clientes` | ADMIN, RECEPCAO | Cadastrar cliente (sempre criado como `ATIVO`) |
+| GET | `/api/clientes` | Autenticado | Sem filtro: lista apenas clientes `ATIVO`. Com `?status=` retorna os do status informado |
+| GET | `/api/clientes/{id}` | Autenticado | Buscar por ID (qualquer status) |
+| GET | `/api/clientes/cpf-cnpj/{cpfCnpj}` | Autenticado | Buscar por CPF/CNPJ (qualquer status) |
+| PUT | `/api/clientes/{id}` | ADMIN, RECEPCAO | Atualizar dados cadastrais — não altera o status |
+| PATCH | `/api/clientes/{id}/status` | ADMIN | Ativar ou inativar o cliente |
+| DELETE | `/api/clientes/{id}` | ADMIN, RECEPCAO | Inativar o cliente (soft delete, idempotente) |
 
 ---
 

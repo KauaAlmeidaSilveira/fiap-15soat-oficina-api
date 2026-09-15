@@ -1,6 +1,8 @@
 package br.com.fiap.oficina.controller;
 
+import br.com.fiap.oficina.core.domain.enums.StatusCliente;
 import br.com.fiap.oficina.core.domain.enums.TipoDocumento;
+import br.com.fiap.oficina.dto.request.AlterarStatusClienteRequest;
 import br.com.fiap.oficina.dto.request.ClienteRequest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.DisplayName;
@@ -16,6 +18,7 @@ import org.springframework.test.web.servlet.MvcResult;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -156,15 +159,95 @@ class ClienteControllerIT {
     }
 
     @Test
-    @DisplayName("Deve deletar cliente existente")
-    void deveDeletarCliente() throws Exception {
+    @DisplayName("DELETE deve inativar o cliente, preservando-o para consulta")
+    void deveInativarClienteSemApagar() throws Exception {
         Long id = criarCliente("Diana Faria", "22476936529");
 
         mockMvc.perform(delete("/api/clientes/" + id))
                 .andExpect(status().isNoContent());
 
         mockMvc.perform(get("/api/clientes/" + id))
-                .andExpect(status().isNotFound());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("INATIVO"));
+    }
+
+    @Test
+    @DisplayName("Deve criar cliente já com status ATIVO")
+    void deveCriarClienteAtivo() throws Exception {
+        ClienteRequest request = new ClienteRequest(
+                "Ativo Silva", "35766778015", TipoDocumento.CPF, null, null, null);
+
+        mockMvc.perform(post("/api/clientes")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.status").value("ATIVO"));
+    }
+
+    @Test
+    @DisplayName("Listagem padrão não deve trazer clientes inativos")
+    void naoDeveListarClientesInativos() throws Exception {
+        Long ativo = criarCliente("Cliente Ativo", "40320356876");
+        Long inativo = criarCliente("Cliente Inativo", "22476936529");
+        mockMvc.perform(delete("/api/clientes/" + inativo)).andExpect(status().isNoContent());
+
+        mockMvc.perform(get("/api/clientes"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[?(@.id == " + inativo + ")]").isEmpty())
+                .andExpect(jsonPath("$[?(@.id == " + ativo + ")]").isNotEmpty());
+    }
+
+    @Test
+    @DisplayName("Filtro explícito por status deve trazer os inativos")
+    void deveListarInativosComFiltro() throws Exception {
+        Long inativo = criarCliente("Cliente Inativo", "22476936529");
+        mockMvc.perform(delete("/api/clientes/" + inativo)).andExpect(status().isNoContent());
+
+        mockMvc.perform(get("/api/clientes").param("status", "INATIVO"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[?(@.id == " + inativo + ")]").isNotEmpty());
+    }
+
+    @Test
+    @DisplayName("Deve reativar cliente via PATCH de status")
+    void deveReativarClienteViaPatch() throws Exception {
+        Long id = criarCliente("Reativado Souza", "22476936529");
+        mockMvc.perform(delete("/api/clientes/" + id)).andExpect(status().isNoContent());
+
+        mockMvc.perform(patch("/api/clientes/" + id + "/status")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(
+                                new AlterarStatusClienteRequest(StatusCliente.ATIVO))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("ATIVO"));
+    }
+
+    @Test
+    @WithMockUser(roles = "RECEPCAO")
+    @DisplayName("Deve retornar 403 ao alterar status sem perfil ADMIN")
+    void deveRetornar403AoAlterarStatusSemAdmin() throws Exception {
+        mockMvc.perform(patch("/api/clientes/1/status")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(
+                                new AlterarStatusClienteRequest(StatusCliente.ATIVO))))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("Atualização cadastral não deve reativar cliente inativo")
+    void naoDeveReativarViaPut() throws Exception {
+        Long id = criarCliente("Carlos Inativo", "22476936529");
+        mockMvc.perform(delete("/api/clientes/" + id)).andExpect(status().isNoContent());
+
+        ClienteRequest update = new ClienteRequest(
+                "Carlos Renomeado", "22476936529", TipoDocumento.CPF, null, null, null);
+
+        mockMvc.perform(put("/api/clientes/" + id)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(update)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.nome").value("Carlos Renomeado"))
+                .andExpect(jsonPath("$.status").value("INATIVO"));
     }
 
     @Test
