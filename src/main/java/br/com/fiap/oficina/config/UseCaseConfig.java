@@ -8,7 +8,6 @@ import br.com.fiap.oficina.core.gateway.NotificacaoAprovacaoGateway;
 import br.com.fiap.oficina.core.gateway.OrdemServicoGateway;
 import br.com.fiap.oficina.core.gateway.ProdutoGateway;
 import br.com.fiap.oficina.core.gateway.TokenAprovacaoGateway;
-import br.com.fiap.oficina.core.gateway.TokenAutenticacaoGateway;
 import br.com.fiap.oficina.core.gateway.UsuarioGateway;
 import br.com.fiap.oficina.core.gateway.VeiculoGateway;
 import br.com.fiap.oficina.core.usecase.AuthUseCase;
@@ -49,8 +48,7 @@ public class UseCaseConfig {
     }
 
     @Bean
-    public AuthUseCase authUseCase(UsuarioGateway usuarioGateway, TokenAutenticacaoGateway tokenAutenticacaoGateway,
-                                   CriptografiaSenhaGateway criptografiaSenhaGateway) {
-        return new AuthUseCase(usuarioGateway, tokenAutenticacaoGateway, criptografiaSenhaGateway);
+    public AuthUseCase authUseCase(UsuarioGateway usuarioGateway, CriptografiaSenhaGateway criptografiaSenhaGateway) {
+        return new AuthUseCase(usuarioGateway, criptografiaSenhaGateway);
     }
 }

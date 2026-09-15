@@ -2,7 +2,6 @@ package br.com.fiap.oficina.controller;
 
 import br.com.fiap.oficina.dataprovider.persistence.entity.Role;
 import br.com.fiap.oficina.dataprovider.persistence.repository.RoleRepository;
-import br.com.fiap.oficina.dto.request.LoginRequest;
 import br.com.fiap.oficina.dto.request.RegisterRequest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -135,17 +134,6 @@ class AuthControllerIT {
     }
 
     @Test
-    @DisplayName("Deve retornar 401 ao tentar login com usuário inexistente")
-    void deveRetornar401LoginUsuarioInexistente() throws Exception {
-        LoginRequest request = new LoginRequest("naoexiste@email.com", "Senha@123");
-
-        mockMvc.perform(post("/api/auth/login")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isUnauthorized());
-    }
-
-    @Test
     @WithMockUser(roles = "OPERADOR")
     @DisplayName("Deve retornar 403 ao tentar registrar sem role ADMIN")
     void deveRetornar403RegistroSemRoleAdmin() throws Exception {
@@ -155,37 +143,5 @@ class AuthControllerIT {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isForbidden());
-    }
-
-    @Test
-    @DisplayName("Deve retornar 401 ao tentar login com senha incorreta")
-    void deveRetornar401LoginSenhaIncorreta() throws Exception {
-        mockMvc.perform(post("/api/auth/register")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(new RegisterRequest("login@email.com", "Senha@123"))))
-                .andExpect(status().isCreated());
-
-        LoginRequest request = new LoginRequest("login@email.com", "SenhaErrada@9");
-
-        mockMvc.perform(post("/api/auth/login")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isUnauthorized());
-    }
-
-    @Test
-    @DisplayName("Deve retornar 200 com token ao fazer login com credenciais corretas")
-    void deveRetornar200ComTokenNoLoginComSucesso() throws Exception {
-        mockMvc.perform(post("/api/auth/register")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(new RegisterRequest("loginsucesso@email.com", "Senha@123"))))
-                .andExpect(status().isCreated());
-
-        mockMvc.perform(post("/api/auth/login")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(new LoginRequest("loginsucesso@email.com", "Senha@123"))))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.token").isNotEmpty())
-                .andExpect(jsonPath("$.expiresIn").value(28800));
     }
 }
