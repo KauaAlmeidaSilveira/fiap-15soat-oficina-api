@@ -113,6 +113,18 @@ jobs:
             --from-literal=jwt.public.key="${{ secrets.JWT_PUBLIC_KEY }}" \
             --dry-run=client -o yaml | kubectl apply -f -
 
+      # O controller nao converte um ELB classico em NLB: o Service antigo precisa ser
+      # apagado uma vez. Depois da migracao a anotacao ja existe e o step nao faz nada.
+      - name: Migrar Service para NLB interno (idempotente)
+        run: |
+          if kubectl get service oficina-api -n oficina >/dev/null 2>&1; then
+            tipo=$(kubectl get service oficina-api -n oficina \
+              -o jsonpath='{.metadata.annotations.service\.beta\.kubernetes\.io/aws-load-balancer-type}')
+            if [ "$tipo" != "nlb" ]; then
+              kubectl delete service oficina-api -n oficina
+            fi
+          fi
+
       - name: Renderizar e aplicar ConfigMap/Deployment/Service/HPA
         env:
           RDS_ENDPOINT: ${{ secrets.RDS_ENDPOINT }}

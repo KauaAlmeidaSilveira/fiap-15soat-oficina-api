@@ -12,6 +12,7 @@ public interface ClientePersistenceMapper {
 
     @Mapping(target = "veiculos", ignore = true)
     @Mapping(target = "ordensServico", ignore = true)
+    @Mapping(target = "senhaHash", ignore = true)
     br.com.fiap.oficina.dataprovider.persistence.entity.Cliente toEntity(Cliente domain);
 
     @Mapping(target = "id", ignore = true)
@@ -19,5 +20,6 @@ public interface ClientePersistenceMapper {
     @Mapping(target = "atualizadoEm", ignore = true)
     @Mapping(target = "veiculos", ignore = true)
     @Mapping(target = "ordensServico", ignore = true)
+    @Mapping(target = "senhaHash", ignore = true)
     void updateEntity(@MappingTarget br.com.fiap.oficina.dataprovider.persistence.entity.Cliente entity, Cliente domain);
 }

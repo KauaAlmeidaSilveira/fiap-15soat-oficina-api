@@ -418,4 +418,30 @@ class OrdemServicoUseCaseUnitTest {
 
         assertThat(resultado.getStatus()).isEqualTo(StatusOS.AGUARDANDO_APROVACAO);
     }
+
+    @Test
+    @DisplayName("Deve devolver a OS quando ela pertence ao cliente autenticado")
+    void buscarDoClienteDevolveOsDoProprioCliente() {
+        when(osGateway.buscarPorId(1L)).thenReturn(Optional.of(os));
+
+        assertThat(useCase.buscarDoCliente(1L, 1L)).isSameAs(os);
+    }
+
+    @Test
+    @DisplayName("Deve responder como inexistente a OS de outro cliente")
+    void buscarDoClienteNaoRevelaOsDeOutroCliente() {
+        when(osGateway.buscarPorId(1L)).thenReturn(Optional.of(os));
+
+        assertThatThrownBy(() -> useCase.buscarDoCliente(1L, 2L))
+                .isInstanceOf(RecursoNaoEncontradoException.class);
+    }
+
+    @Test
+    @DisplayName("Deve lançar exceção quando a OS não existe")
+    void buscarDoClienteOsInexistente() {
+        when(osGateway.buscarPorId(99L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> useCase.buscarDoCliente(99L, 1L))
+                .isInstanceOf(RecursoNaoEncontradoException.class);
+    }
 }

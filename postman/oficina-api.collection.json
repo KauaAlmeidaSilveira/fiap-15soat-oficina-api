@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "944a4c94-95cd-4d59-b903-a5ea1c87b820",
     "name": "Oficina Mecânica API",
-    "description": "Collection completa da API de oficina mecânica.\n\n---\n**PASSO 1** — Execute **Auth > Login** (escolha o usuário desejado).\nO token é salvo automaticamente em {{token}} e usado em todas as requisições protegidas.\n\n**PASSO 2** — Use os demais endpoints normalmente.\nAs variáveis {{cliente_id}}, {{veiculo_id}}, {{os_id}}, {{os_item_id}} e {{produto_id}} são salvas automaticamente pelos requests de criação — ou você pode editá-las manualmente na aba Environments.\n\n---\n**Dados do DataLoader (já no banco ao subir a aplicação):**\n\nUsuários:\n- kaua@gmail.com / Admin@123 → ADMIN\n- recepcao@oficina.com / Recepcao@123 → RECEPCAO\n- operador@oficina.com / Operador@123 → OPERADOR\n\nClientes (IDs 1-3):\n- 1 → João da Silva (CPF 12345678901)\n- 2 → Maria Oliveira (CPF 98765432100)\n- 3 → Transportes Rápidos Ltda (CNPJ 12345678000199)\n\nVeículos (IDs 1-3):\n- 1 → Toyota Corolla 2021 | placa ABC1234 (vinculado ao João)\n- 2 → Hyundai HB20 2019 | placa DEF5678 (vinculado à Maria)\n- 3 → Mercedes-Benz Sprinter 2022 | placa XYZ9A01 (vinculado à Empresa)\n\nProdutos — Peças (IDs 1-5):\n- 1 → Filtro de Óleo R$45,00 | estoque: 50 UN\n- 2 → Filtro de Ar R$35,00 | estoque: 30 UN\n- 3 → Óleo Motor 5W30 R$28,00 | estoque: 100 L\n- 4 → Pastilha de Freio Dianteira R$120,00 | estoque: 20 KIT\n- 5 → Correia Dentada R$180,00 | estoque: 15 KIT\n\nProdutos — Serviços (IDs 6-9):\n- 6 → Troca de Óleo e Filtro R$80,00\n- 7 → Alinhamento e Balanceamento R$150,00\n- 8 → Revisão de Freios R$120,00\n- 9 → Troca de Correia Dentada R$200,00\n\nOrdens de Serviço:\n- OS 1 → João / Corolla | status: AGUARDANDO_APROVACAO | total: R$237,00\n  itens: Troca de Óleo (1x R$80) + Óleo Motor 5W30 (4x R$28) + Filtro de Óleo (1x R$45)\n- OS 2 → Transportes Rápidos / Sprinter | status: RECEBIDA",
+    "description": "Collection completa da API de oficina mecânica.\n\n---\n**PASSO 1** — Execute **Auth > Login** (escolha o usuário desejado).\nO token é salvo automaticamente em {{token}} e usado em todas as requisições protegidas.\n\n**PASSO 2** — Use os demais endpoints normalmente.\nAs variáveis {{cliente_id}}, {{veiculo_id}}, {{os_id}}, {{os_item_id}} e {{produto_id}} são salvas automaticamente pelos requests de criação — ou você pode editá-las manualmente na aba Environments.\n\n---\n**Dados do DataLoader (já no banco ao subir a aplicação):**\n\nUsuários:\n- kaua@gmail.com / Admin@123 → ADMIN\n- recepcao@oficina.com / Recepcao@123 → RECEPCAO\n- operador@oficina.com / Operador@123 → OPERADOR\n\nClientes (IDs 1-3):\n- 1 → João da Silva (CPF 52998224725)\n- 2 → Maria Oliveira (CPF 98765432100)\n- 3 → Transportes Rápidos Ltda (CNPJ 12345678000199)\n\nVeículos (IDs 1-3):\n- 1 → Toyota Corolla 2021 | placa ABC1234 (vinculado ao João)\n- 2 → Hyundai HB20 2019 | placa DEF5678 (vinculado à Maria)\n- 3 → Mercedes-Benz Sprinter 2022 | placa XYZ9A01 (vinculado à Empresa)\n\nProdutos — Peças (IDs 1-5):\n- 1 → Filtro de Óleo R$45,00 | estoque: 50 UN\n- 2 → Filtro de Ar R$35,00 | estoque: 30 UN\n- 3 → Óleo Motor 5W30 R$28,00 | estoque: 100 L\n- 4 → Pastilha de Freio Dianteira R$120,00 | estoque: 20 KIT\n- 5 → Correia Dentada R$180,00 | estoque: 15 KIT\n\nProdutos — Serviços (IDs 6-9):\n- 6 → Troca de Óleo e Filtro R$80,00\n- 7 → Alinhamento e Balanceamento R$150,00\n- 8 → Revisão de Freios R$120,00\n- 9 → Troca de Correia Dentada R$200,00\n\nOrdens de Serviço:\n- OS 1 → João / Corolla | status: AGUARDANDO_APROVACAO | total: R$237,00\n  itens: Troca de Óleo (1x R$80) + Óleo Motor 5W30 (4x R$28) + Filtro de Óleo (1x R$45)\n- OS 2 → Transportes Rápidos / Sprinter | status: RECEBIDA",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
     "_exporter_id": "53473425"
   },
@@ -17,14 +17,11 @@
               "listen": "test",
               "script": {
                 "exec": [
-                  "if (pm.response.code === 200) {",
-                  "    const json = pm.response.json();",
-                  "    pm.environment.set('token', json.token);",
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "    pm.environment.set('token', pm.response.json().token);",
                   "}"
                 ],
-                "type": "text/javascript",
-                "packages": {},
-                "requests": {}
+                "type": "text/javascript"
               }
             }
           ],
@@ -41,20 +38,19 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"username\": \"kaua@gmail.com\",\n  \"password\": \"Admin@123\"\n}"
+              "raw": "{\n  \"username\": \"kaua@gmail.com\",\n  \"senha\": \"Admin@123\"\n}"
             },
             "url": {
-              "raw": "{{base_url}}/api/auth/login",
+              "raw": "{{auth_url}}/auth/funcionario",
               "host": [
-                "{{base_url}}"
+                "{{auth_url}}"
               ],
               "path": [
-                "api",
                 "auth",
-                "login"
+                "funcionario"
               ]
             },
-            "description": "Login com ADMIN. Pode criar/editar/deletar tudo, incluindo registrar novos usuários, ativar/inativar clientes e fazer saída manual de estoque."
+            "description": "Login de funcionário na Lambda. Pode criar/editar/deletar tudo."
           },
           "response": []
         },
@@ -65,12 +61,8 @@
               "listen": "test",
               "script": {
                 "exec": [
-                  "if (pm.response.code === 200) {",
-                  "    const json = pm.response.json();",
-                  "    pm.environment.set('token', json.token);",
-                  "    console.log('✅ Token salvo como RECEPCAO! Expira em ' + (json.expiresIn / 3600) + 'h');",
-                  "} else {",
-                  "    console.error('❌ Login falhou — verifique usuário e senha.');",
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "    pm.environment.set('token', pm.response.json().token);",
                   "}"
                 ],
                 "type": "text/javascript"
@@ -90,20 +82,19 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"username\": \"recepcao@oficina.com\",\n  \"password\": \"Recepcao@123\"\n}"
+              "raw": "{\n  \"username\": \"recepcao@oficina.com\",\n  \"senha\": \"Recepcao@123\"\n}"
             },
             "url": {
-              "raw": "{{base_url}}/api/auth/login",
+              "raw": "{{auth_url}}/auth/funcionario",
               "host": [
-                "{{base_url}}"
+                "{{auth_url}}"
               ],
               "path": [
-                "api",
                 "auth",
-                "login"
+                "funcionario"
               ]
             },
-            "description": "Pode criar/editar clientes, veículos e abrir OS. Não pode avançar status, alterar status de cliente nem gerenciar estoque."
+            "description": "Login de funcionário na Lambda. Gerencia clientes, veículos e abertura de OS."
           },
           "response": []
         },
@@ -114,12 +105,8 @@
               "listen": "test",
               "script": {
                 "exec": [
-                  "if (pm.response.code === 200) {",
-                  "    const json = pm.response.json();",
-                  "    pm.environment.set('token', json.token);",
-                  "    console.log('✅ Token salvo como OPERADOR! Expira em ' + (json.expiresIn / 3600) + 'h');",
-                  "} else {",
-                  "    console.error('❌ Login falhou — verifique usuário e senha.');",
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "    pm.environment.set('token', pm.response.json().token);",
                   "}"
                 ],
                 "type": "text/javascript"
@@ -139,20 +126,108 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"username\": \"operador@oficina.com\",\n  \"password\": \"Operador@123\"\n}"
+              "raw": "{\n  \"username\": \"operador@oficina.com\",\n  \"senha\": \"Operador@123\"\n}"
             },
             "url": {
-              "raw": "{{base_url}}/api/auth/login",
+              "raw": "{{auth_url}}/auth/funcionario",
               "host": [
-                "{{base_url}}"
+                "{{auth_url}}"
               ],
               "path": [
-                "api",
                 "auth",
-                "login"
+                "funcionario"
               ]
             },
-            "description": "Pode avançar status de OS, adicionar itens, gerenciar produtos e registrar entrada de estoque."
+            "description": "Login de funcionário na Lambda. Executa OS e movimenta estoque."
+          },
+          "response": []
+        },
+        {
+          "name": "Primeiro Acesso do Cliente",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "    pm.environment.set('token', pm.response.json().token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cpf\": \"52998224725\",\n  \"email\": \"joao@email.com\",\n  \"senha\": \"Cliente@123\"\n}"
+            },
+            "url": {
+              "raw": "{{auth_url}}/auth/cliente/primeiro-acesso",
+              "host": [
+                "{{auth_url}}"
+              ],
+              "path": [
+                "auth",
+                "cliente",
+                "primeiro-acesso"
+              ]
+            },
+            "description": "Define a senha do cliente João (DataLoader) e já devolve o token. Só funciona uma vez."
+          },
+          "response": []
+        },
+        {
+          "name": "Login do Cliente (CPF)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "    pm.environment.set('token', pm.response.json().token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cpf\": \"52998224725\",\n  \"senha\": \"Cliente@123\"\n}"
+            },
+            "url": {
+              "raw": "{{auth_url}}/auth/cliente",
+              "host": [
+                "{{auth_url}}"
+              ],
+              "path": [
+                "auth",
+                "cliente"
+              ]
+            },
+            "description": "Login do cliente por CPF + senha. O token só acessa /api/minhas-ordens-servico."
           },
           "response": []
         },
@@ -197,6 +272,50 @@
               ]
             },
             "description": "Requer token de ADMIN no header.\nO usuário criado recebe automaticamente a role OPERADOR.\n\nRegras da senha: mínimo 8 caracteres, pelo menos 1 maiúsculo + 1 dígito + 1 caractere especial."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Minhas Ordens de Serviço (Cliente)",
+      "item": [
+        {
+          "name": "Listar Minhas OS",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/minhas-ordens-servico",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "minhas-ordens-servico"
+              ]
+            },
+            "description": "Exige token de Auth > Login do Cliente (CPF)."
+          },
+          "response": []
+        },
+        {
+          "name": "Detalhar Minha OS",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/minhas-ordens-servico/{{os_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "minhas-ordens-servico",
+                "{{os_id}}"
+              ]
+            },
+            "description": "OS de outro cliente responde 404."
           },
           "response": []
         }
@@ -287,7 +406,7 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{base_url}}/api/clientes/cpf-cnpj/12345678901",
+              "raw": "{{base_url}}/api/clientes/cpf-cnpj/52998224725",
               "host": [
                 "{{base_url}}"
               ],
@@ -295,7 +414,7 @@
                 "api",
                 "clientes",
                 "cpf-cnpj",
-                "12345678901"
+                "52998224725"
               ]
             }
           },

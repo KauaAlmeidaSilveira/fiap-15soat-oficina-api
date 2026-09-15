@@ -1,9 +1,7 @@
 package br.com.fiap.oficina.entrypoint.controller;
 
 import br.com.fiap.oficina.core.usecase.AuthUseCase;
-import br.com.fiap.oficina.dto.request.LoginRequest;
 import br.com.fiap.oficina.dto.request.RegisterRequest;
-import br.com.fiap.oficina.dto.response.LoginResponse;
 import br.com.fiap.oficina.dto.response.RegisterResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -21,12 +19,6 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
 
     private final AuthUseCase authUseCase;
-
-    @PostMapping("/login")
-    public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest loginRequest) {
-        var resultado = authUseCase.login(loginRequest.username(), loginRequest.password());
-        return ResponseEntity.ok(new LoginResponse(resultado.token(), resultado.expiresIn()));
-    }
 
     @PostMapping("/register")
     @PreAuthorize("hasRole('ADMIN')")

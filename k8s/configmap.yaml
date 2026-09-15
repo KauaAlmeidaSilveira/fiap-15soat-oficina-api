@@ -12,6 +12,8 @@ data:
   JWT_PUBLIC_KEY: "file:/app/keys/jwt.public.key"
   JWT_PRIVATE_KEY: "file:/app/keys/jwt.private.key"
   APP_PUBLIC_BASE_URL: "<APP_PUBLIC_BASE_URL>"
+  # Emissor esperado nos tokens de sessao: a URL do API Gateway, a mesma de APP_PUBLIC_BASE_URL.
+  JWT_ISSUER: "<APP_PUBLIC_BASE_URL>"
   # New Relic - nome da aplicacao no APM. A license key vem do Secret, nunca daqui.
   NEW_RELIC_APP_NAME: "oficina-api"
   # Os logs em JSON sao coletados do stdout pelo nri-bundle; desligar o forwarding

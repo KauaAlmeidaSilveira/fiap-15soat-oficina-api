@@ -97,7 +97,7 @@ public class DataLoader {
 
             // --- Clientes ---
             Cliente joao = clienteRepo.save(Cliente.builder()
-                    .nome("João da Silva").cpfCnpj("12345678901")
+                    .nome("João da Silva").cpfCnpj("52998224725")
                     .tipoDocumento(TipoDocumento.CPF)
                     .telefone("11999990001")
                     .email("joao@email.com")

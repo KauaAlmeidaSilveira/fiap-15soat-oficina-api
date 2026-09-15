@@ -72,7 +72,7 @@ kubectl apply -f k8s/
 
 ```bash
 kubectl get pods -n oficina
-kubectl get svc oficina-api -n oficina        # EXTERNAL-IP do LoadBalancer
+kubectl get svc oficina-api -n oficina        # EXTERNAL-IP do NLB interno (so resolve dentro da VPC; a entrada publica e o API Gateway)
 kubectl get hpa oficina-api-hpa -n oficina -w  # acompanhar réplicas/CPU em tempo real
 ```
 

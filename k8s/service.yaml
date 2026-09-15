@@ -3,6 +3,12 @@ kind: Service
 metadata:
   name: oficina-api
   namespace: oficina
+  annotations:
+    # NLB interno: a entrada publica e o API Gateway, que chega aqui por VPC Link
+    # (Terraform em fiap-15soat-oficina-lambda-auth, que encontra este NLB pela tag
+    # kubernetes.io/service-name). Trocar o tipo de load balancer exige recriar o Service.
+    service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+    service.beta.kubernetes.io/aws-load-balancer-internal: "true"
 spec:
   type: LoadBalancer
   selector:

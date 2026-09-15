@@ -9,10 +9,17 @@
 			"enabled": true
 		},
 		{
+			"key": "auth_url",
+			"value": "http://localhost:8080",
+			"type": "default",
+			"enabled": true,
+			"description": "URL do API Gateway (output api_gateway_url do lambda-auth). Em deploy, igual a base_url."
+		},
+		{
 			"key": "token",
 			"value": "",
 			"type": "secret",
-			"description": "Preenchido automaticamente após executar Auth > Login",
+			"description": "Preenchido automaticamente após executar um dos requests de Auth",
 			"enabled": true
 		},
 		{

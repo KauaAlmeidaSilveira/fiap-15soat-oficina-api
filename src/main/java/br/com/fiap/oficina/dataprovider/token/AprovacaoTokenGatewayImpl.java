@@ -5,6 +5,7 @@ import br.com.fiap.oficina.core.gateway.TokenAprovacaoGateway;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.jwt.JwtClaimNames;
 import org.springframework.security.oauth2.jwt.JwtClaimsSet;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
@@ -20,6 +21,7 @@ import java.time.Instant;
 public class AprovacaoTokenGatewayImpl implements TokenAprovacaoGateway {
 
     private static final String SUBJECT = "os-aprovacao";
+    private static final String EMISSOR = "back-end";
 
     private final JwtEncoder jwtEncoder;
     private final JwtDecoder jwtDecoder;
@@ -33,7 +35,7 @@ public class AprovacaoTokenGatewayImpl implements TokenAprovacaoGateway {
     public String gerarToken(Long osId, boolean aprovado) {
         Instant agora = clock.instant();
         var claims = JwtClaimsSet.builder()
-                .issuer("back-end")
+                .issuer(EMISSOR)
                 .subject(SUBJECT)
                 .issuedAt(agora)
                 .expiresAt(agora.plusSeconds(validadeDias * 24 * 60 * 60))
@@ -51,7 +53,10 @@ public class AprovacaoTokenGatewayImpl implements TokenAprovacaoGateway {
         } catch (JwtException e) {
             throw new TokenAprovacaoInvalidoException("Link inválido ou expirado.");
         }
-        if (!SUBJECT.equals(jwt.getSubject())) {
+        boolean temAudiencia = jwt.getAudience() != null && !jwt.getAudience().isEmpty();
+        if (!SUBJECT.equals(jwt.getSubject())
+                || !EMISSOR.equals(jwt.getClaimAsString(JwtClaimNames.ISS))
+                || temAudiencia) {
             throw new TokenAprovacaoInvalidoException("Link inválido ou expirado.");
         }
         Long osId = Long.valueOf(jwt.getClaimAsString("osId"));
