@@ -58,14 +58,24 @@ spec:
             requests:
               cpu: "250m"
               memory: "256Mi"
+            # O boot (Spring + Hibernate + agente New Relic) e limitado por CPU: com 500m
+            # passava de 100s. O HPA calcula sobre o request, entao o limite nao o afeta.
             limits:
-              cpu: "500m"
+              cpu: "1000m"
               memory: "512Mi"
+          # Segura liveness/readiness ate o primeiro health OK (ate 5 min). Sem ela, a
+          # liveness matava o container no meio do boot e o pod entrava em restart loop.
+          startupProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8080
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 30
           readinessProbe:
             httpGet:
               path: /actuator/health
               port: 8080
-            initialDelaySeconds: 20
             periodSeconds: 10
             timeoutSeconds: 5
             failureThreshold: 6
@@ -73,7 +83,6 @@ spec:
             httpGet:
               path: /actuator/health
               port: 8080
-            initialDelaySeconds: 40
             periodSeconds: 15
             timeoutSeconds: 5
             failureThreshold: 3
