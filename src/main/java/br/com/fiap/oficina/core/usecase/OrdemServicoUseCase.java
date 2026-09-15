@@ -105,6 +105,12 @@ public class OrdemServicoUseCase {
                 .orElseThrow(() -> new RecursoNaoEncontradoException("OS não encontrada com número: " + numero));
     }
 
+    public OrdemServico buscarDoCliente(Long osId, Long clienteId) {
+        return osGateway.buscarPorId(osId)
+                .filter(os -> os.getCliente() != null && clienteId.equals(os.getCliente().getId()))
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Ordem de Serviço", osId));
+    }
+
     public List<OrdemServico> listarTodas() {
         return osGateway.listarAtivas().stream()
                 .sorted(Comparator
