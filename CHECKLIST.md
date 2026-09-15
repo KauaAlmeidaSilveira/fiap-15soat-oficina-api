@@ -11,19 +11,26 @@
 
 **Atualização de 15/09/2026 — observabilidade validada contra infraestrutura viva** (commits `a4a3ea7`, `b3d80ee`, `c87dfe4`, mesclados na `master` em paralelo a esta sessão de documentação). Bucket S3 + tabela DynamoDB do backend Terraform criados (conta `647776094260`) e secrets cadastrados nos repos de infra — os dois itens operacionais que faltavam na Seção 2. Na Seção 3: `terraform apply` real dos dashboards/alertas, `nri-bundle` rodando via Helm, nomes de métrica confirmados idênticos às queries, e `trace.id` chegando ao MDC dos logs (exigiu adicionar `com.newrelic.logging:logback`, já que o agente sozinho não injeta). De quebra, dois bugs reais corrigidos: o painel de tempo médio por status misturava códigos HTTP, e JSON malformado devolvia 500 em vez de 400. Única decisão em aberto: fechar a exposição pública do `/actuator/prometheus`.
 
+**Atualização de 15/09/2026 (noite) — autenticação e API Gateway no ar.** Lambda `oficina-auth` e API Gateway HTTP criados por Terraform no repositório `fiap-15soat-oficina-lambda-auth` (25 recursos), API migrada para NLB interno e fluxo completo validado contra a infraestrutura viva. Isso fecha a Seção 1 inteira e também a **única decisão que estava em aberto na Seção 3**: `/actuator/prometheus` não tem rota no Gateway e a API não é mais pública, então a métrica só é lida de dentro do cluster. Pendências operacionais: os secrets do `lambda-auth` no GitHub (exigem admin no repositório) e as credenciais do Academy vencidas nos repositórios, que deixam as pipelines vermelhas.
+
 **Resumo original:** a Fase 3 é majoritariamente trabalho novo. O que a Fase 2 entregou (EKS + RDS + Terraform + HPA + CI/CD) cobre parte da "Infraestrutura obrigatória", mas **autenticação por CPF, API Gateway, Lambda, observabilidade, a separação em 4 repositórios e toda a documentação arquitetural (sequência, RFCs, ADRs, ER) não existem hoje**.
 
 ---
 
 ## 1. Autenticação e API Gateway
 
-- [ ] **API Gateway** (AWS API Gateway, Kong, Traefik ou outro) para controle e roteamento — nada no repositório hoje; o `Service` do K8s é um `LoadBalancer` direto (`k8s/service.yaml`)
-- [ ] **Proteger rotas sensíveis com autenticação via CPF** — hoje o login é `username` (e-mail) + senha em `AuthUseCase.login()` e `POST /api/auth/login` (`dto/request/LoginRequest.java`)
-- [ ] **Function Serverless (Lambda)** — repositório/código inexistente. Deve:
-  - [ ] Validar o CPF do cliente — há lógica reaproveitável em `src/main/java/br/com/fiap/oficina/validation/CpfOuCnpjValidator.java`
-  - [x] Consultar **existência e status** do cliente na base — desbloqueado: `Cliente.status` (`ATIVO`/`INATIVO`) mesclado na `master` via PR #2 (`feat/status-cliente`), 195 testes passando. Falta só a Lambda em si consumir isso
-  - [ ] Gerar e devolver JWT válido para as APIs protegidas — o par RSA e a emissão já existem (`config/SecurityConfig.java` → `NimbusJwtEncoder`, `dataprovider/token/TokenAutenticacaoGatewayImpl.java`); a Lambda precisa assinar com chave que a API confie (hoje as chaves vêm do Secret do K8s)
-- [ ] Decidir e documentar como a API passa a confiar no token emitido pela Lambda (mesmo par RSA via Secrets Manager, JWKS endpoint, ou Cognito)
+**Entregue e no ar em 15/09/2026:** `https://vhb3qkxdq8.execute-api.us-east-1.amazonaws.com`
+
+- [x] **API Gateway** — AWS API Gateway HTTP API. `/auth/*` e `/.well-known/*` vão para a Lambda; `/api/{proxy+}` passa pelo JWT authorizer e segue por VPC Link até um **NLB interno**. O `Service` deixou de ser `LoadBalancer` público (`k8s/service.yaml`), então a API só é alcançável pelo Gateway
+- [x] **Proteger rotas sensíveis com autenticação via CPF** — cliente entra com **CPF + senha** (`POST /auth/cliente`), com a senha criada em `POST /auth/cliente/primeiro-acesso` conferindo o e-mail do cadastro. CPF sozinho não autentica: é dado quase público. O login de funcionário (e-mail + senha) também migrou para a Lambda
+- [x] **Function Serverless (Lambda)** — `oficina-auth`, Node 22, subnets privadas, repositório `fiap-15soat-oficina-lambda-auth`:
+  - [x] Validar o CPF do cliente — `src/cpf.js`, dígitos verificadores próprios; CNPJ responde 400
+  - [x] Consultar **existência e status** do cliente na base — `src/repositorio.js` lê `cliente` no RDS; `INATIVO` responde 403, e só depois de a senha conferir
+  - [x] Gerar e devolver JWT válido — RS256 com `aud = oficina-api` e `iss` = URL do Gateway; 8 h para funcionário, 1 h para cliente
+- [x] Decidir e documentar como a API passa a confiar no token emitido pela Lambda — **mesmo par RSA via Secrets Manager**. A Lambda assina com a chave privada do segredo `oficina/auth`; a API valida assinatura, `aud` e `iss`, e o Gateway valida de novo pelo JWKS que a própria Lambda publica
+- [x] Rotas de leitura do cliente na API — `GET /api/minhas-ordens-servico` e `/{id}`, com o `clienteId` vindo do `sub` do token
+- [x] **Falha de segurança corrigida no caminho:** o token do link de aprovação por e-mail (validade de 7 dias, sem `aud`) era aceito como token de sessão e dava acesso de leitura a todos os clientes. Agora os dois tokens se excluem
+- [x] Validado ponta a ponta contra a infraestrutura no ar: primeiro acesso (201), repetição (422), CPF inválido (400), login por CPF (200), "minhas OS" (200), cliente em rota de funcionário (403), sem token (401), senha errada (401)
 
 ## 2. Estrutura de Repositórios e CI/CD
 
