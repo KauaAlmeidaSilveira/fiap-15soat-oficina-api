@@ -72,8 +72,8 @@ Nomenclatura definida, mantendo o prefixo já existente:
 
 ### Regras de proteção
 
-- [x] **Branch `main`/`master` protegida (sem commits diretos)** — aplicado via `gh api .../branches/master/protection` em `api` e `lambda-auth` (mesma config de `infra-k8s`/`infra-db`): PR obrigatório, 0 aprovações exigidas (2 pessoas no grupo), force push e deleção de branch bloqueados. Esta própria mudança (remoção de `docs/superpowers/`) é a prova: o push direto na `master` foi rejeitado pelo GitHub, só entrou via PR
-- [x] **Uso obrigatório de Pull Requests para merge** — confirmado pela mesma configuração acima
+- [x] **Branch `main`/`master` protegida (sem commits diretos)** — aplicado via `gh api .../branches/master/protection` em `api` e `lambda-auth` (mesma config de `infra-k8s`/`infra-db`): PR obrigatório, 0 aprovações exigidas (2 pessoas no grupo), force push e deleção de branch bloqueados. **Ressalva real, testada**: `enforce_admins=false` (escolha deliberada, para não travar uma correção emergencial) significa que push direto de um **admin** do repositório passa, com o GitHub só sinalizando `Bypassed rule violations: Changes must be made through a pull request` — não é um bloqueio duro para quem é dono do repo. Colaboradores sem admin ficam de fato impedidos. Esta PR é a prova do fluxo correto (mudança feita por branch + PR, não por push direto)
+- [x] **Uso obrigatório de Pull Requests para merge** — confirmado pela mesma configuração acima, com a ressalva de admin registrada no item anterior
 
 ### Infraestrutura obrigatória
 
