@@ -164,8 +164,8 @@ Cada critério (propósito, tecnologias, passos, diagrama) é checado por reposi
 
 ### Vídeo de demonstração (YouTube/Vimeo, até 15 minutos)
 
-- [ ] Execução da pipeline CI/CD
-- [ ] Deploy automatizado
+- [ ] Pipeline CI/CD
+- [ ] Deploy
 - [ ] Dashboard de monitoramento com análise ao vivo
 - [ ] Consumo das APIs protegidas
 - [ ] Autenticação com CPF
@@ -173,7 +173,7 @@ Cada critério (propósito, tecnologias, passos, diagrama) é checado por reposi
 
 ### Entrega no Portal do Aluno
 
-- [ ] PDF único com links dos 4 repositórios
+- [x] PDF único com links dos 4 repositórios — `Repositorios-Tech-Challenge-Fase3.pdf` (fora dos 4 repos, na pasta raiz do desafio): nome, papel, conta GitHub e link de cada um
 - [ ] Link do vídeo (até 15 minutos)
 - [ ] Links das documentações
 - [x] Confirmação do usuário `soat-architecture` adicionado a **todos** os repositórios — feito nos 4 (`api` confirmado; `lambda-auth`, `infra-k8s`, `infra-db` com convite enviado, aceite depende do outro lado) — ver Seção 2
