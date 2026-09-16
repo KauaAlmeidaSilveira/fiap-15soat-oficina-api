@@ -72,8 +72,8 @@ Nomenclatura definida, mantendo o prefixo já existente:
 
 ### Regras de proteção
 
-- [ ] **Branch `main`/`master` protegida (sem commits diretos)** — ainda não foi feito. O histórico mostra commits direto no `master` (`98c5386`, `8441082`, `ea95f99`…) e **apenas 1 PR** em todo o projeto (`#1`)
-- [ ] **Uso obrigatório de Pull Requests para merge** — ainda não foi feito
+- [x] **Branch `main`/`master` protegida (sem commits diretos)** — aplicado via `gh api .../branches/master/protection` em `api` e `lambda-auth` (mesma config de `infra-k8s`/`infra-db`): PR obrigatório, 0 aprovações exigidas (2 pessoas no grupo), force push e deleção de branch bloqueados. Esta própria mudança (remoção de `docs/superpowers/`) é a prova: o push direto na `master` foi rejeitado pelo GitHub, só entrou via PR
+- [x] **Uso obrigatório de Pull Requests para merge** — confirmado pela mesma configuração acima
 
 ### Infraestrutura obrigatória
 
@@ -86,7 +86,6 @@ Nomenclatura definida, mantendo o prefixo já existente:
 ## 3. Monitoramento e Observabilidade
 
 **Ferramenta: New Relic**, conta free região US, account `7428180`. Código commitado em `14a1e8c`.
-Design em `docs/superpowers/specs/2026-09-13-observabilidade-newrelic-design.md`.
 
 ### Implementado e verificado
 
