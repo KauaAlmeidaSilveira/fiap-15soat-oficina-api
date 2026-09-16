@@ -66,6 +66,8 @@ public class OrdemServicoUseCase {
 
     public OrdemServico criar(Long clienteId, Long veiculoId, String descricaoProblema,
                               String observacoes, List<ItemNovo> itens) {
+        LOG.log(System.Logger.Level.INFO,
+                "Recebida solicitação de abertura de OS para o cliente " + clienteId + " e veículo " + veiculoId);
         Cliente cliente = clienteGateway.buscarPorId(clienteId)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Cliente", clienteId));
         if (!cliente.estaAtivo()) {
@@ -90,8 +92,12 @@ public class OrdemServicoUseCase {
             }
             os.recalcularTotal();
         }
+        LOG.log(System.Logger.Level.INFO,
+                "Processando abertura da OS " + os.getNumero() + " com " + os.getItens().size() + " item(ns)");
         OrdemServico criada = osGateway.salvar(os);
         metricasGateway.ordemServicoCriada();
+        LOG.log(System.Logger.Level.INFO,
+                "OS " + criada.getNumero() + " criada com sucesso, status " + criada.getStatus());
         return criada;
     }
 
@@ -130,6 +136,8 @@ public class OrdemServicoUseCase {
     public OrdemServico avancarStatus(Long id) {
         OrdemServico os = buscarPorId(id);
         StatusOS anterior = os.getStatus();
+        LOG.log(System.Logger.Level.INFO,
+                "Recebida solicitação para avançar status da OS " + os.getNumero() + " (status atual: " + anterior + ")");
         Duration tempoNoStatusAnterior = os.tempoNoStatusAtual();
         os.avancarStatus();
         StatusOS novo = os.getStatus();
@@ -143,12 +151,20 @@ public class OrdemServicoUseCase {
             notificarAprovacaoPendente(salva);
         }
         metricasGateway.transicaoDeStatus(anterior, novo, tempoNoStatusAnterior);
+        LOG.log(System.Logger.Level.INFO,
+                "OS " + salva.getNumero() + " avançou de " + anterior + " para " + novo);
+        if (novo == StatusOS.ENTREGUE) {
+            LOG.log(System.Logger.Level.INFO,
+                    "Ciclo de vida da OS " + salva.getNumero() + " concluído: entregue ao cliente");
+        }
         return salva;
     }
 
     public OrdemServico aprovar(Long id, boolean aprovado) {
         OrdemServico os = buscarPorId(id);
         StatusOS anterior = os.getStatus();
+        LOG.log(System.Logger.Level.INFO,
+                "Recebida decisão de aprovação da OS " + os.getNumero() + ": aprovado=" + aprovado);
         Duration tempoNoStatusAnterior = os.tempoNoStatusAtual();
         os.aprovar(aprovado);
         if (aprovado) {
@@ -156,16 +172,21 @@ public class OrdemServicoUseCase {
         }
         OrdemServico salva = osGateway.salvar(os);
         metricasGateway.transicaoDeStatus(anterior, salva.getStatus(), tempoNoStatusAnterior);
+        LOG.log(System.Logger.Level.INFO,
+                "OS " + salva.getNumero() + " teve a aprovação processada: " + anterior + " -> " + salva.getStatus());
         return salva;
     }
 
     public boolean processarDecisaoViaToken(String token) {
         var decodificado = tokenGateway.validar(token);
+        LOG.log(System.Logger.Level.INFO,
+                "Processando decisão de aprovação via link de e-mail para a OS " + decodificado.osId());
         aprovar(decodificado.osId(), decodificado.aprovado());
         return decodificado.aprovado();
     }
 
     public OrdemServico adicionarItem(Long osId, ItemNovo itemNovo) {
+        LOG.log(System.Logger.Level.INFO, "Recebida solicitação para adicionar item à OS " + osId);
         OrdemServico os = buscarPorId(osId);
         OsItem item = construirItem(itemNovo);
         os.adicionarItem(item);
@@ -176,10 +197,13 @@ public class OrdemServicoUseCase {
                     "Saída automática - adição de item pós-aprovação da OS " + os.getNumero(), os.getId());
             estoqueGateway.sincronizarSaldo(item.getProdutoId());
         }
+        LOG.log(System.Logger.Level.INFO,
+                "Item adicionado à OS " + salva.getNumero() + ": produto " + item.getProdutoNome());
         return salva;
     }
 
     public OrdemServico removerItem(Long osId, Long itemId) {
+        LOG.log(System.Logger.Level.INFO, "Recebida solicitação para remover item " + itemId + " da OS " + osId);
         OrdemServico os = buscarPorId(osId);
         OsItem item = os.getItens().stream()
                 .filter(i -> itemId.equals(i.getId()))
@@ -192,7 +216,10 @@ public class OrdemServicoUseCase {
             estoqueGateway.sincronizarSaldo(item.getProdutoId());
         }
         os.removerItem(item);
-        return osGateway.salvar(os);
+        OrdemServico salva = osGateway.salvar(os);
+        LOG.log(System.Logger.Level.INFO,
+                "Item removido da OS " + salva.getNumero() + ": produto " + item.getProdutoNome());
+        return salva;
     }
 
     public Double tempoMedioExecucao() {
@@ -225,6 +252,9 @@ public class OrdemServicoUseCase {
                 estoqueGateway.registrarMovimentacao(item.getProdutoId(), TipoMovimentacao.SAIDA, item.getQuantidade(),
                         "Saída automática - aprovação da OS " + os.getNumero(), os.getId());
                 estoqueGateway.sincronizarSaldo(item.getProdutoId());
+                LOG.log(System.Logger.Level.INFO,
+                        "Baixa de estoque processada na OS " + os.getNumero() + ": produto " + item.getProdutoNome()
+                                + ", quantidade " + item.getQuantidade());
             }
         }
     }
