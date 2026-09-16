@@ -5,9 +5,8 @@
 > completo de status da OS (RECEBIDA → ... → ENTREGUE) já está documentado em texto no
 > `README.md`, seção "Fluxo de status da OS".
 >
-> O diagrama de sequência da **autenticação** (CPF → API Gateway → Lambda → JWT → API)
-> fica para quando o RFC da estratégia de autenticação — hoje bloqueado — for fechado (ver
-> `CHECKLIST.md`, Seção 1).
+> O diagrama de sequência da **autenticação** (CPF → API Gateway → Lambda → JWT → API) fica
+> em [`docs/sequencia-autenticacao.md`](sequencia-autenticacao.md).
 
 ```mermaid
 sequenceDiagram

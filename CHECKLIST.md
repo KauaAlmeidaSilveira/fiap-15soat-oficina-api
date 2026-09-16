@@ -9,7 +9,13 @@
 
 **Atualização de 14/09/2026 — Seção 4 (documentação) fechada, exceto o que depende do RFC de autenticação.** Adicionados `docs/adr/` (2 ADRs, só de decisões já implementadas), `docs/rfc/` (2 RFCs, um absorvendo a justificativa formal do banco), `docs/sequencia-abertura-os.md` (Mermaid), `docs/requisitos-fase3.md` (espelho do PDF do desafio) e `docs/diagrama-infraestrutura.png` redesenhado com a 4ª coluna de Observabilidade (New Relic). Critério adotado: só documentar o que já está implementado — nada de ADR/RFC/diagrama para API Gateway ou Lambda enquanto isso não existir de fato no código; o conteúdo da nova coluna do diagrama foi conferido contra o código real (`k8s/newrelic-values.yaml`, `infra/newrelic.tf`, `CorrelationIdFilter`) em duas rodadas de correção. Ressalva conhecida: a seta de métricas do diagrama sai visualmente perto do metrics-server/HPA em vez de sair dos Pods — o rótulo está correto, só o ponto de saída não reflete o mecanismo exato; aceito como está.
 
-**Atualização de 15/09/2026 — observabilidade validada contra infraestrutura viva** (commits `a4a3ea7`, `b3d80ee`, `c87dfe4`, mesclados na `master` em paralelo a esta sessão de documentação). Bucket S3 + tabela DynamoDB do backend Terraform criados (conta `647776094260`) e secrets cadastrados nos repos de infra — os dois itens operacionais que faltavam na Seção 2. Na Seção 3: `terraform apply` real dos dashboards/alertas, `nri-bundle` rodando via Helm, nomes de métrica confirmados idênticos às queries, e `trace.id` chegando ao MDC dos logs (exigiu adicionar `com.newrelic.logging:logback`, já que o agente sozinho não injeta). De quebra, dois bugs reais corrigidos: o painel de tempo médio por status misturava códigos HTTP, e JSON malformado devolvia 500 em vez de 400. Única decisão em aberto: fechar a exposição pública do `/actuator/prometheus`.
+**Atualização de 15/09/2026 — observabilidade validada contra infraestrutura viva** (commits `a4a3ea7`, `b3d80ee`, `c87dfe4`, mesclados na `master` em paralelo a esta sessão de documentação). Bucket S3 + tabela DynamoDB do backend Terraform criados (conta `647776094260`) e secrets cadastrados nos repos de infra — os dois itens operacionais que faltavam na Seção 2. Na Seção 3: `terraform apply` real dos dashboards/alertas, `nri-bundle` rodando via Helm, nomes de métrica confirmados idênticos às queries, e `trace.id` chegando ao MDC dos logs (exigiu adicionar `com.newrelic.logging:logback`, já que o agente sozinho não injeta). De quebra, dois bugs reais corrigidos: o painel de tempo médio por status misturava códigos HTTP, e JSON malformado devolvia 500 em vez de 400. A exposição pública do `/actuator/prometheus` foi resolvida depois, como efeito colateral do trabalho de API Gateway (ver ponto de atenção 7).
+
+**Atualização de 15/09/2026 — `lambda-auth` deixou de estar vazio: código completo commitado** (`0b89745`..`d6764c4`). CPF (validação e dígito verificador), autenticação de funcionário e de cliente com bcrypt, emissão de JWT RS256 via `jose`, repositório Postgres, handler HTTP com rotas `/auth/*` e descoberta OIDC/JWKS, Terraform completo (Lambda + API Gateway HTTP API + VPC Link + Secrets Manager) e pipeline de CI/CD (testes + `terraform plan`/`apply` + smoke test) — mesmo padrão dos outros dois repos de infra. Verificado agora nesta máquina: `npm test` → 36 testes, 0 falhas; `terraform fmt -check` e `terraform validate` → OK. `npm run test:integracao` (Postgres real) não verificável — Docker instalado mas não em execução [?]. Isso resolve, no nível de código, quase todo o item "Function Serverless (Lambda)" da Seção 1 (CPF, consulta de status, emissão de JWT) e a decisão de confiança do token (mesmo par RSA via Secrets Manager). Duas lacunas de integração ficam expostas por essa mudança, ainda não corrigidas em nenhum repo — viraram os pontos de atenção 8 e 9: (1) o Terraform do `lambda-auth` só encontra a API por um NLB tagueado pelo `Service` do K8s, mas esse `Service` continua um `LoadBalancer` genérico sem AWS Load Balancer Controller em `infra-k8s`, o que no EKS produz um Classic Load Balancer por padrão — nem o data source nem o VPC Link do API Gateway o aceitam; (2) o schema que o `lambda-auth` espera tem a coluna `cliente.senha_hash`, que a entidade `Cliente` do repo `api` ainda não tem.
+
+**Atualização de 15/09/2026 — `infra-k8s`: fix técnico, não muda itens do checklist.** Commit `71a5922` substitui o módulo `terraform-aws-modules/eks` por recursos nativos do provider (`aws_eks_cluster`/`aws_eks_node_group`/`aws_eks_addon`), contornando `iam:GetRole` implícito no módulo sob as restrições do AWS Academy.
+
+**Atualização de 15/09/2026 — `api` fecha os dois gaps de integração dos pontos de atenção 8 e 9, e a troca de eixo da autenticação (ponto 2) foi feita.** Merge `6a118e6` (`feat/api-gateway-auth`, 8 commits): `k8s/service.yaml` ganhou as anotações `aws-load-balancer-type: nlb` + `aws-load-balancer-internal: true` (mais um step idempotente no `ci-cd.yml` que apaga o `Service` uma vez, já que um Classic ELB não vira NLB in-place) — resolve o ponto 8; `Cliente.java` ganhou `@Column(name = "senha_hash", length = 60)` — resolve o ponto 9. O login antigo (`AuthController`) perdeu `/login`, só resta `/register` (ADMIN); `SecurityConfig` agora restringe `/api/minhas-ordens-servico/**` a `ROLE_CLIENTE` e o resto de `/api/**` a `ADMIN`/`RECEPCAO`/`OPERADOR`, e o `JwtDecoder` passou a validar `aud = oficina-api` e `iss` (`jwt.issuer`, injetado como o mesmo valor de `APP_PUBLIC_BASE_URL`/`JWT_ISSUER` no `configmap.yaml`). Endpoint novo `GET /api/minhas-ordens-servico(/{id})` lê o `sub` do JWT como `clienteId`, batendo com o token que o `lambda-auth` emite para cliente. README documenta a troca (tabela funcionário/cliente) dos dois lados agora, mas ainda sem RFC/ADR formal. `lambda-auth` também recebeu 2 commits (`e3c5d0e`): corrige ordem de criação do JWT authorizer vs. rota de discovery, e passa a rodar CI/CD em push para `master`.
 
 **Atualização de 15/09/2026 (noite) — autenticação e API Gateway no ar.** Lambda `oficina-auth` e API Gateway HTTP criados por Terraform no repositório `fiap-15soat-oficina-lambda-auth` (25 recursos), API migrada para NLB interno e fluxo completo validado contra a infraestrutura viva. Isso fecha a Seção 1 inteira e também a **única decisão que estava em aberto na Seção 3**: `/actuator/prometheus` não tem rota no Gateway e a API não é mais pública, então a métrica só é lida de dentro do cluster. Pendências operacionais: os secrets do `lambda-auth` no GitHub (exigem admin no repositório) e as credenciais do Academy vencidas nos repositórios, que deixam as pipelines vermelhas.
 
@@ -27,7 +33,7 @@
   - [x] Validar o CPF do cliente — `src/cpf.js`, dígitos verificadores próprios; CNPJ responde 400
   - [x] Consultar **existência e status** do cliente na base — `src/repositorio.js` lê `cliente` no RDS; `INATIVO` responde 403, e só depois de a senha conferir
   - [x] Gerar e devolver JWT válido — RS256 com `aud = oficina-api` e `iss` = URL do Gateway; 8 h para funcionário, 1 h para cliente
-- [x] Decidir e documentar como a API passa a confiar no token emitido pela Lambda — **mesmo par RSA via Secrets Manager**. A Lambda assina com a chave privada do segredo `oficina/auth`; a API valida assinatura, `aud` e `iss`, e o Gateway valida de novo pelo JWKS que a própria Lambda publica
+- [x] Decidir e documentar como a API passa a confiar no token emitido pela Lambda — **mesmo par RSA via Secrets Manager**. A Lambda assina com a chave privada do segredo `oficina/auth`; a API valida assinatura, `aud` e `iss`, e o Gateway valida de novo pelo JWKS que a própria Lambda publica. Formalizado em [RFC-0003](docs/rfc/0003-estrategia-de-autenticacao-cpf-via-lambda.md)
 - [x] Rotas de leitura do cliente na API — `GET /api/minhas-ordens-servico` e `/{id}`, com o `clienteId` vindo do `sub` do token
 - [x] **Falha de segurança corrigida no caminho:** o token do link de aprovação por e-mail (validade de 7 dias, sem `aud`) era aceito como token de sessão e dava acesso de leitura a todos os clientes. Agora os dois tokens se excluem
 - [x] Validado ponta a ponta contra a infraestrutura no ar: primeiro acesso (201), repetição (422), CPF inválido (400), login por CPF (200), "minhas OS" (200), cliente em rota de funcionário (403), sem token (401), senha errada (401)
@@ -43,7 +49,7 @@ Nomenclatura definida, mantendo o prefixo já existente:
 | 1 | `fiap-15soat-oficina-api` | Aplicação Java, manifestos K8s, observabilidade | **criado no GitHub** (`KauaAlmeidaSilveira`) existe, **reorganizado** |
 | 2 | `fiap-15soat-oficina-infra-k8s` | VPC, EKS, ECR | **no GitHub** (`JulioNCavalcanti`), commit `a8cceba` |
 | 3 | `fiap-15soat-oficina-infra-db` | RDS PostgreSQL | **no GitHub** (`JulioNCavalcanti`), commit `d4f52e9` |
-| 4 | `fiap-15soat-oficina-lambda-auth` | Lambda de autenticação por CPF | **criado no GitHub** (`KauaAlmeidaSilveira`), repositório vazio — sem commits |
+| 4 | `fiap-15soat-oficina-lambda-auth` | Lambda de autenticação por CPF + API Gateway | **código completo no GitHub** (`KauaAlmeidaSilveira`), commit `e3c5d0e` — 36 testes unitários passando |
 
 - [x] **Definir nomenclatura** — prefixo `fiap-15soat-oficina-` preservado; o repo atual não é renomeado
 - [x] **`infra-k8s` montado e validado** — `vpc.tf`, `eks.tf`, `ecr.tf` copiados; `versions.tf` sem o provider New Relic; 3 outputs de rede novos (`vpc_id`, `private_subnets`, `private_subnet_cidrs`). `terraform validate` e `fmt` OK, zero variável obrigatória
@@ -52,38 +58,27 @@ Nomenclatura definida, mantendo o prefixo já existente:
 - [x] **Repo da aplicação reorganizado** — `infra/` removido, `observability/` criado com o Terraform do New Relic, `.gitignore` generalizado, referências órfãs corrigidas em `README.md`, `k8s/README.md`, `CLAUDE.md` e nos comentários dos manifestos
 - [x] **`infra-k8s` e `infra-db` criados no GitHub e pushados** — `git init` em `main`, commit inicial, remote ligado. Local e remoto conferidos no mesmo hash, sem divergência
 - [x] **README de `infra-k8s` e `infra-db`** — propósito, tecnologias, passos, diagrama da arquitetura e tabela de outputs. Documentam também as restrições do AWS Academy e a ordem de destruição (banco antes da VPC)
-- [x] **Criar o repositório `lambda-auth`** — último dos quatro, criado em `KauaAlmeidaSilveira` (mesma conta da aplicação), mas ainda **vazio** (sem commits, sem README, sem esqueleto)
+- [x] **Criar o repositório `lambda-auth`** — último dos quatro, criado em `KauaAlmeidaSilveira` (mesma conta da aplicação). Deixou de estar vazio: código completo (Lambda + Terraform + CI/CD + testes), commits `0b89745`..`e3c5d0e` — ver Seção 1
 - [x] **Criar o bucket S3 `fiap-15soat-oficina-tfstate` e a tabela DynamoDB `fiap-15soat-oficina-tflock`** (conta `647776094260`, 15/09/2026) — os três `versions.tf` já apontam para eles
 - [x] **Pipeline de CI/CD nos dois repos de infra** — `.github/workflows/terraform.yml` em cada um (`8992338` e `76767b3`): `fmt`/`validate`/`plan` no PR com o plano comentado no próprio PR, `apply` no push para `main`. Validação roda sem backend, então sobrevive a credencial expirada; `apply` atrelado ao Environment `producao`; `concurrency group` evita disputa pelo lock do DynamoDB; no `infra-db` a senha entra como `TF_VAR_db_password`, sem virar arquivo no runner
 - [x] Cadastrar os secrets nos dois repos: `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_SESSION_TOKEN` e, no `infra-db`, `DB_PASSWORD`
-- [ ] Configurar revisor obrigatório no Environment `producao` de cada repo de infra
-- [ ] Pipeline de CI/CD do `lambda-auth` — repositório já existe (vazio); falta o esqueleto de código antes de fazer sentido montar o workflow
+- [x] Pipeline de CI/CD do `lambda-auth` — `.github/workflows/ci-cd.yml` (`d6764c4`): testes unitários e de integração + `terraform fmt`/`validate`/`plan` (plano comentado no PR) em pull request; empacotamento da Lambda + `terraform apply` no Environment `producao` + smoke test no push para `main`, mesmo padrão dos outros dois repos de infra
 - [x] `.terraform.lock.hcl` do `observability/` gerado e commitado em `fbb1649` — trava só o provider `newrelic`
-- [ ] Esqueleto do `lambda-auth` — campo `status` em `Cliente` já existe (PR #2); não bloqueia mais
+- [x] Esqueleto do `lambda-auth` — superado: não é mais só esqueleto, é implementação completa (ver Seção 1)
 - [x] `api` — `soat-architecture` confirmado como colaborador (evidência: `settings/access`, 15/09/2026)
 - [x] `lambda-auth` — convite enviado a `soat-architecture` (evidência: `settings/access`, 15/09/2026). Aceite depende do outro lado; nossa parte está feita
 - [x] `infra-k8s` — convite enviado a `soat-architecture` (evidência: `settings/access`, 15/09/2026). Aceite depende do outro lado; nossa parte está feita
 - [x] `infra-db` — convite enviado a `soat-architecture` (evidência: `settings/access`, 15/09/2026). Aceite depende do outro lado; nossa parte está feita
-- [ ] ⚠️ **Os repositórios estão em duas contas**: `api` e `lambda-auth` sob `KauaAlmeidaSilveira`, `infra-k8s` e `infra-db` sob `JulioNCavalcanti`. Secrets, proteção de branch e o convite ao `soat-architecture` precisam ser feitos em cada conta separadamente — combinar quem cuida de quais
 
 ### Regras de proteção
 
-- [?] **Branch `main`/`master` protegida (sem commits diretos)** — não verificável via CLI (`gh` sem credenciais válidas). ⚠️ O histórico mostra commits direto no `master` (`98c5386`, `8441082`, `ea95f99`…) e **apenas 1 PR** em todo o projeto (`#1`), o que sugere que a proteção não está ativa
-- [?] **Uso obrigatório de Pull Requests para merge** — mesma verificação pendente
-- [ ] 🔸 **DECISÃO EM ABERTO — onde fica o ambiente de homologação.** O enunciado exige "deploy automático das branches de homologação e produção". Os pipelines de infraestrutura implementam só produção. Ninguém no grupo tem opinião formada ainda; decidir antes de gravar o vídeo.
-
-  | Opção | Custo | Observação |
-  |---|---|---|
-  | Homologação nos repos de **infraestrutura** | alto — duplica EKS e RDS | Fiel ao enunciado, mas provavelmente estoura os créditos do Academy |
-  | Homologação só no repo da **aplicação** | baixo — mesmo cluster, namespaces diferentes | Atende o requisito onde ele é barato; a infraestrutura fica com um ambiente só |
-  | Ambientes por workspace do Terraform | médio | Um state por workspace, mas ainda cria recursos duplicados na AWS |
-
-  Recomendação de quem implementou: a segunda. Exige criar a branch de homologação e um segundo bloco de deploy no workflow da aplicação.
+- [ ] **Branch `main`/`master` protegida (sem commits diretos)** — ainda não foi feito. O histórico mostra commits direto no `master` (`98c5386`, `8441082`, `ea95f99`…) e **apenas 1 PR** em todo o projeto (`#1`)
+- [ ] **Uso obrigatório de Pull Requests para merge** — ainda não foi feito
 
 ### Infraestrutura obrigatória
 
-- [ ] API Gateway para controle e roteamento
-- [ ] Function Serverless para autenticação
+- [x] API Gateway para controle e roteamento — Terraform completo em `lambda-auth` (ver Seção 1)
+- [x] Function Serverless para autenticação — código e testes completos em `lambda-auth` (ver Seção 1)
 - [x] Banco de Dados Gerenciado — RDS PostgreSQL (`infra/rds.tf`)
 - [x] Cluster Kubernetes com escalabilidade — EKS (`infra/eks.tf`) + HPA (`k8s/hpa.yaml`, 1→2 réplicas, 70% CPU)
 - [x] Terraform para provisionamento — `infra/` (mas ver separação em repositórios acima)
@@ -125,7 +120,7 @@ Design em `docs/superpowers/specs/2026-09-13-observabilidade-newrelic-design.md`
 | 4 | Nomes das métricas batem com as queries | ✅ `oficina_os_*` chegam idênticos; OS de teste 5 e 6 |
 | 5 | `nri-bundle` via Helm | ✅ 9 pods, métricas Prometheus, K8s e logs chegando |
 | 6 | `trace.id` do agente no JSON | ✅ `NewRelic:trace.id`/`span.id` via `NewRelicAsyncAppender` (`c87dfe4`) |
-| 7 | Fechar a exposição pública de `/actuator/prometheus` | ❌ decisão em aberto — responde 200 pelo ELB |
+| 7 | Fechar a exposição pública de `/actuator/prometheus` | ✅ resolvido em código (`450ccba`) — `Service` virou NLB interno, ver ponto de atenção 7 |
 
 Correções que a validação exigiu:
 
@@ -141,9 +136,9 @@ Comportamentos esperados, não defeitos:
 ## 4. Documentação da Arquitetura
 
 - [x] **Diagrama de Componentes com visão de nuvem, APIs, banco e monitoramento** — `docs/diagrama-infraestrutura.png` redesenhado com uma 4ª coluna de Observabilidade (New Relic: nri-bundle, agente APM, logs, dashboards, alertas), mantendo as 3 colunas da Fase 2 (Pipeline CI/CD, Infraestrutura AWS, Runtime Kubernetes). API Gateway e Lambda não entram — não existe código para eles ainda. `docs/diagrama-componentes.png` (Clean Architecture, camadas de código) não muda, não é o que este item do desafio pede
-- [ ] **Diagrama de Sequência** para o fluxo de **autenticação** (CPF → API Gateway → Lambda → JWT → API) — bloqueado até fechar o RFC da estratégia de autenticação
+- [x] **Diagrama de Sequência** para o fluxo de **autenticação** (CPF → API Gateway → Lambda → JWT → API) — [`docs/sequencia-autenticacao.md`](docs/sequencia-autenticacao.md), Mermaid, cobre login de cliente por CPF e o consumo de uma rota protegida (`GET /api/minhas-ordens-servico`), com notas para o login de funcionário e o primeiro acesso
 - [x] **Diagrama de Sequência** para o fluxo de **abertura de ordem de serviço** — `docs/sequencia-abertura-os.md`, Mermaid, cobre a criação da OS (`POST /api/ordens-servico`) conforme a redação literal do PDF do desafio
-- [x] **RFCs** para decisões técnicas relevantes — `docs/rfc/`: [0001 escolha da nuvem (AWS)](docs/rfc/0001-escolha-da-nuvem-aws.md), [0002 escolha do banco (RDS PostgreSQL)](docs/rfc/0002-escolha-do-banco-de-dados-rds-postgresql.md). Falta só o RFC da estratégia de autenticação, que fica bloqueado (ver Seção 1)
+- [x] **RFCs** para decisões técnicas relevantes — `docs/rfc/`: [0001 escolha da nuvem (AWS)](docs/rfc/0001-escolha-da-nuvem-aws.md), [0002 escolha do banco (RDS PostgreSQL)](docs/rfc/0002-escolha-do-banco-de-dados-rds-postgresql.md), [0003 estratégia de autenticação (CPF via Lambda)](docs/rfc/0003-estrategia-de-autenticacao-cpf-via-lambda.md)
 - [x] **ADRs** para decisões arquiteturais permanentes — `docs/adr/`: [0001 uso de HPA](docs/adr/0001-uso-de-hpa-para-escalabilidade.md), [0002 comunicação síncrona via REST](docs/adr/0002-comunicacao-sincrona-via-rest.md)
 - [x] **Justificativa formal da escolha do banco de dados** — absorvida no [RFC-0002](docs/rfc/0002-escolha-do-banco-de-dados-rds-postgresql.md), evita duplicar o mesmo conteúdo em dois documentos
 - [x] **Ajustes no modelo relacional + diagrama ER + explicação dos relacionamentos** — campo `status` do cliente já existe (PR #2); `docs/diagrama-er.png` gerado via Mermaid a partir de `docs/diagrama-er.mmd` (texto, versionável), conferido campo a campo contra as 10 entidades reais; explicação escrita em [`docs/modelo-relacional.md`](docs/modelo-relacional.md)
@@ -153,9 +148,9 @@ Comportamentos esperados, não defeitos:
 
 ### Repositórios Git
 
-- [ ] 4 repositórios separados com código, CI/CD e instruções claras no `README.md`
-- [ ] Dockerfiles em cada repositório (quando aplicável)
-- [ ] Pipelines de CI/CD funcionais em cada repositório
+- [x] 4 repositórios separados com código, CI/CD e instruções claras no `README.md` — confirmado nos quatro agora que `lambda-auth` saiu do vazio (ver Seção 2)
+- [x] Dockerfiles em cada repositório (quando aplicável) — só `api` roda em container (`Dockerfile` na raiz); `infra-k8s`/`infra-db` são só Terraform e `lambda-auth` empacota `.zip` (`scripts/empacotar.sh`) — Docker não se aplica a nenhum dos três
+- [x] Pipelines de CI/CD funcionais em cada repositório — `api` (`ci-cd.yml`), `infra-k8s` e `infra-db` (`terraform.yml`), `lambda-auth` (`ci-cd.yml`, novo)
 - [ ] Links para os deploys ativos
 
 ### README.md de cada repositório
@@ -165,16 +160,16 @@ Cada critério (propósito, tecnologias, passos, diagrama) é checado por reposi
 - [x] `infra-k8s` — propósito, tecnologias, passos de execução e diagrama da arquitetura presentes no README (confirmado na linha de "README de infra-k8s e infra-db" acima)
 - [x] `infra-db` — propósito, tecnologias, passos de execução e diagrama da arquitetura presentes no README (idem)
 - [x] `api` — README tem "Sobre o Projeto" (propósito), "Stack tecnológica", "Como executar" e os dois diagramas embutidos (`diagrama-componentes.png`, `diagrama-infraestrutura.png`). Ressalva: os diagramas são os mesmos da Fase 2 e ainda não mostram API Gateway/Lambda/observabilidade — acompanha o item da Seção 4 acima, não bloqueia este checkbox
-- [ ] `lambda-auth` — repositório vazio; nenhum dos quatro critérios existe ainda
+- [x] `lambda-auth` — README tem arquitetura (diagrama Mermaid), seção de autenticação com o contrato das rotas, "Tecnologias" e passos de "Desenvolvimento"/"Deploy"
 - [x] Link para o Swagger/Postman das APIs — `postman/oficina-api.collection.json` + `.environment.json` criados, cruzados contra os controllers reais (2 bugs corrigidos: corpo faltando em "Aprovar OS", variável errada em "Remove Item à OS") e completados com o endpoint novo do PR #2 (`PATCH /clientes/{id}/status`) e o de aprovação pública que o README já prometia
 
 ### Vídeo de demonstração (YouTube/Vimeo, até 15 minutos)
 
-- [ ] Autenticação com CPF
 - [ ] Execução da pipeline CI/CD
 - [ ] Deploy automatizado
-- [ ] Consumo das APIs protegidas
 - [ ] Dashboard de monitoramento com análise ao vivo
+- [ ] Consumo das APIs protegidas
+- [ ] Autenticação com CPF
 - [ ] Logs e traces em execução
 
 ### Entrega no Portal do Aluno
@@ -188,13 +183,14 @@ Cada critério (propósito, tecnologias, passos, diagrama) é checado por reposi
 
 ## Pontos de atenção que atravessam as frentes
 
-1. **Modelagem do cliente** — o `status` exigido pela Lambda não existe hoje; a mudança atinge domínio, entidade JPA, mappers MapStruct, DTOs e o diagrama ER de uma vez.
-2. **Autenticação muda de eixo** — sair de `username` + senha (`AuthUseCase`) para CPF via Lambda afeta `SecurityConfig`, os `@PreAuthorize` dos controllers, o `DataLoader` (usuários semeados) e todos os `*ControllerIT` que usam `@WithMockUser`.
-3. **Separar `infra/` em dois repositórios** exige decidir como o `terraform output` do repo de banco chega ao repo de K8s e ao pipeline da aplicação (hoje tudo vem de secrets do GitHub definidos à mão).
+1. ✅ **RESOLVIDO (PR #2, antes desta sessão)** — ~~Modelagem do cliente: o `status` exigido pela Lambda não existe~~: `Cliente.status` (`ATIVO`/`INATIVO`) já existe em domínio, entidade JPA, mappers e diagrama ER (ver Seção 1 e Seção 4). Ponto de atenção mantido desatualizado por descuido em revisões anteriores deste arquivo.
+2. ✅ **RESOLVIDO em 15/09/2026** (`cd24146`) — ~~Autenticação muda de eixo~~: `AuthController` perdeu `/login` (só resta `/register`, ADMIN); `SecurityConfig` restringe por role (`ROLE_CLIENTE` em `/api/minhas-ordens-servico/**`, staff no resto de `/api/**`) e valida `aud`/`iss`; `DataLoader` ganhou um CPF com dígito verificador válido (`52998224725`) para o cliente semeado; testes novos cobrem o cenário (`AutorizacaoPorPerfilIT`, `SessaoJwtDecoderUnitTest`, `MinhasOrdensServicoControllerIT`).
 4. **Gate de cobertura JaCoCo (80%)** continua valendo em `core.usecase`, `core.domain.entity` e `entrypoint.controller` — código novo nesses pacotes sem teste quebra o `mvn verify` da CI.
 5. **State do Terraform é local e não existe nesta máquina** — impede tanto retomar a infra atual com segurança quanto atender ao requisito de deploy automático em 4 repositórios. Ver Seção 2.
 6. **Credenciais AWS são temporárias (Academy)** — o workflow usa `AWS_SESSION_TOKEN`. Toda retomada começa por renovar as credenciais locais **e** os três GitHub Secrets, senão o pipeline falha no deploy.
-7. **`/actuator/prometheus` está público** — liberado no `SecurityConfig` para o coletor alcançá-lo, mas o `Service` é `LoadBalancer`, então fica exposto na internet. Não vaza segredo; vaza nomes de endpoints e detalhes de JVM. Fechar movendo o actuator para uma porta de management separada, o que obriga a ajustar as probes do `deployment.yaml`.
+7. ✅ **RESOLVIDO em 15/09/2026** (`450ccba`, efeito colateral do ponto 8) — ~~`/actuator/prometheus` está público~~: o `Service` virou um NLB **interno** (`aws-load-balancer-internal: "true"`), então deixa de ser alcançável pela internet; o `nri-bundle` já lia as métricas de dentro do cluster (via anotação de scrape nos Pods), não pela porta pública, então a observabilidade não depende disso. `SecurityConfig` continua com `permitAll` na rota, mas isso deixa de importar fora da VPC.
+8. ✅ **RESOLVIDO em 15/09/2026** (`450ccba`) — ~~NLB vs Classic Load Balancer entre `api` e `lambda-auth`~~: `k8s/service.yaml` ganhou as anotações `service.beta.kubernetes.io/aws-load-balancer-type: "nlb"` e `-internal: "true"`; como um Classic ELB não vira NLB in-place, o `ci-cd.yml` ganhou um step idempotente que apaga o `Service` uma única vez para forçar a recriação.
+9. ✅ **RESOLVIDO em 15/09/2026** (`b9ec0e8`) — ~~Coluna `cliente.senha_hash` não existe na API~~: `Cliente.java` ganhou `@Column(name = "senha_hash", length = 60)`; com `ddl-auto=update`, a coluna é criada no próximo boot contra o RDS real.
 
 ---
 
