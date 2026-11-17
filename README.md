@@ -492,3 +492,4 @@ fiap-15soat-oficina-api/
 | Lombok | — | Redução de boilerplate |
 | JaCoCo | 0.8.11 | Cobertura de testes |
 | JUnit 5 + Mockito | — | Testes |
+<!-- teste de evidência: proteção de branch (não mergear) -->
